@@ -1,10 +1,13 @@
 import { AuthProvider } from './context/AuthProvider'
+import { TeacherAuthProvider } from './context/TeacherAuthProvider'
 import AppRoutes from './routes/AppRoutes'
 
 function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <TeacherAuthProvider>
+        <AppRoutes />
+      </TeacherAuthProvider>
     </AuthProvider>
   )
 }

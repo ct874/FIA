@@ -11,7 +11,7 @@ const app = express()
 app.use(helmet())
 app.use(
   cors({
-    origin: env.clientOrigins,
+    origin: env.clientOrigins,    
   }),
 )
 app.use(express.json())

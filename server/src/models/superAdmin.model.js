@@ -20,10 +20,9 @@ const superAdminSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
-superAdminSchema.pre('save', async function hashPassword(next) {
-  if (!this.isModified('password')) return next()
+superAdminSchema.pre('save', async function hashPassword() {
+  if (!this.isModified('password')) return
   this.password = await bcrypt.hash(this.password, SALT_ROUNDS)
-  next()
 })
 
 superAdminSchema.methods.comparePassword = function comparePassword(candidatePassword) {
