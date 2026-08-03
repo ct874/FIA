@@ -1,5 +1,6 @@
 import { School } from '../models/school.model.js'
 import { processSchoolListUpload } from '../services/school.service.js'
+import { getSchoolsOverview, getAdminSubmissions, deleteAllProgramData } from '../services/adminDashboard.service.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { sendSuccess } from '../utils/ApiResponse.js'
 import { ApiError } from '../utils/ApiError.js'
@@ -34,4 +35,22 @@ export const lookupSchoolByUdise = asyncHandler(async (req, res) => {
 export const deleteAllSchools = asyncHandler(async (_req, res) => {
   await School.deleteMany({})
   sendSuccess(res, { message: 'All schools deleted' })
+})
+
+// Real, live data behind every Super Admin dashboard card, table, and export
+// — computed from School/StudentReach/StudentFeedback/TeacherFeedback, the
+// same collections the Teacher Portal writes to.
+export const getSchoolsDashboard = asyncHandler(async (_req, res) => {
+  const schools = await getSchoolsOverview()
+  sendSuccess(res, { message: 'Dashboard data fetched', data: { schools } })
+})
+
+export const getSchoolsSubmissions = asyncHandler(async (_req, res) => {
+  const data = await getAdminSubmissions()
+  sendSuccess(res, { message: 'Submissions fetched', data })
+})
+
+export const deleteProgramData = asyncHandler(async (_req, res) => {
+  await deleteAllProgramData()
+  sendSuccess(res, { message: 'All feedback and reach data deleted' })
 })

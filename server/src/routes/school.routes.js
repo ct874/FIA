@@ -5,6 +5,9 @@ import {
   listSchools,
   lookupSchoolByUdise,
   deleteAllSchools,
+  getSchoolsDashboard,
+  getSchoolsSubmissions,
+  deleteProgramData,
 } from '../controllers/school.controller.js'
 import { authenticate } from '../middleware/authenticate.js'
 
@@ -19,7 +22,10 @@ router.get('/lookup/:udise', lookupSchoolByUdise)
 
 router.use(authenticate)
 router.get('/', listSchools)
+router.get('/dashboard', getSchoolsDashboard)
+router.get('/submissions', getSchoolsSubmissions)
 router.post('/upload', upload.single('file'), uploadSchoolList)
+router.delete('/data', deleteProgramData)
 router.delete('/', deleteAllSchools)
 
 export default router

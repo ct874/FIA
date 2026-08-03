@@ -10,6 +10,12 @@ export const uploadSchoolListRequest = (file) => {
 
 export const fetchSchoolsRequest = () => axiosClient.get('/schools')
 
+export const fetchSchoolsDashboardRequest = () => axiosClient.get('/schools/dashboard')
+
+export const fetchSchoolsSubmissionsRequest = () => axiosClient.get('/schools/submissions')
+
 export const lookupSchoolRequest = (udise) => axiosClient.get(`/schools/lookup/${udise}`)
 
 export const deleteAllSchoolsRequest = () => axiosClient.delete('/schools')
+
+export const deleteAllProgramDataRequest = () => axiosClient.delete('/schools/data')

@@ -1,53 +1,75 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { TeacherAuthContext } from './teacherAuthContext'
-import { findSchoolByUdise } from '../services/schoolDirectory.service'
+import { teacherLoginRequest, teacherLogoutRequest, fetchCurrentSchool } from '../api/teacherAuth.api'
 import {
-  getStoredTeacherSession,
-  persistTeacherSession,
-  clearStoredTeacherSession,
-} from '../utils/teacherSessionStorage'
+  getStoredTeacherToken,
+  persistTeacherToken,
+  clearStoredTeacherToken,
+} from '../utils/teacherTokenStorage'
+import { TEACHER_AUTH_UNAUTHORIZED_EVENT } from '../utils/constants'
 
-// No dedicated teacher auth endpoint yet — "login" checks the UDISE against
-// the school directory (canonical dummy data + Admin-uploaded schools from
-// MongoDB) and requires the default password (the UDISE itself).
 export function TeacherAuthProvider({ children }) {
-  const [session, setSession] = useState(getStoredTeacherSession)
+  const [teacher, setTeacher] = useState(null)
+  const [isCheckingSession, setIsCheckingSession] = useState(true)
 
-  const login = useCallback(async ({ udise, password, rememberMe }) => {
-    const trimmedUdise = udise.trim()
-    const school = await findSchoolByUdise(trimmedUdise)
+  useEffect(() => {
+    let isMounted = true
 
-    if (!school) {
-      throw new Error('UDISE not found. Ask your Admin to add your school first.')
-    }
-    if (password !== trimmedUdise) {
-      throw new Error('Incorrect password. The default password is your UDISE code.')
+    const checkSession = async () => {
+      const token = getStoredTeacherToken()
+      if (!token) {
+        if (isMounted) setIsCheckingSession(false)
+        return
+      }
+
+      try {
+        const { data } = await fetchCurrentSchool()
+        if (isMounted) setTeacher(data.data)
+      } catch {
+        clearStoredTeacherToken()
+        if (isMounted) setTeacher(null)
+      } finally {
+        if (isMounted) setIsCheckingSession(false)
+      }
     }
 
-    const nextSession = {
-      udise: school.udise,
-      schoolName: school.schoolName,
-      district: school.district,
+    checkSession()
+    return () => {
+      isMounted = false
     }
-    persistTeacherSession(nextSession, Boolean(rememberMe))
-    setSession(nextSession)
-    return nextSession
   }, [])
 
-  const logout = useCallback(() => {
-    clearStoredTeacherSession()
-    setSession(null)
+  useEffect(() => {
+    const handleUnauthorized = () => setTeacher(null)
+    window.addEventListener(TEACHER_AUTH_UNAUTHORIZED_EVENT, handleUnauthorized)
+    return () => window.removeEventListener(TEACHER_AUTH_UNAUTHORIZED_EVENT, handleUnauthorized)
+  }, [])
+
+  const login = useCallback(async ({ udise, password, rememberMe }) => {
+    const { data } = await teacherLoginRequest({ udise, password, rememberMe })
+    persistTeacherToken(data.data.token, Boolean(rememberMe))
+    setTeacher(data.data.school)
+    return data.data.school
+  }, [])
+
+  const logout = useCallback(async () => {
+    try {
+      await teacherLogoutRequest()
+    } finally {
+      clearStoredTeacherToken()
+      setTeacher(null)
+    }
   }, [])
 
   const value = useMemo(
     () => ({
-      teacher: session,
-      isAuthenticated: Boolean(session),
-      isCheckingSession: false,
+      teacher,
+      isAuthenticated: Boolean(teacher),
+      isCheckingSession,
       login,
       logout,
     }),
-    [session, login, logout],
+    [teacher, isCheckingSession, login, logout],
   )
 
   return <TeacherAuthContext.Provider value={value}>{children}</TeacherAuthContext.Provider>

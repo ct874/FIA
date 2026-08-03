@@ -6,6 +6,7 @@ import Checkbox from '../../../components/ui/Checkbox'
 import Button from '../../../components/ui/Button'
 import { useAuth } from '../../../hooks/useAuth'
 import { validateLoginForm } from '../utils/validateLoginForm'
+import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { ROUTES } from '../../../utils/constants'
 
 const INITIAL_FORM = { loginId: '', password: '' }
@@ -40,10 +41,7 @@ export default function LoginForm() {
       await login({ ...form, rememberMe })
       navigate(ROUTES.HOME, { replace: true })
     } catch (error) {
-      const message =
-        error?.response?.data?.message ||
-        'Unable to sign in. Please check your credentials and try again.'
-      setFormError(message)
+      setFormError(getApiErrorMessage(error, 'Unable to sign in. Please check your credentials and try again.'))
     } finally {
       setIsSubmitting(false)
     }

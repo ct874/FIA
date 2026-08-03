@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import DashboardTable from '../../../components/table/DashboardTable'
 import Spinner from '../../../components/ui/Spinner'
 import AlertPopup from '../../../components/ui/AlertPopup'
-import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
-import { computeSchoolDirectory } from '../../../data/schoolRecords.derive'
 import { downloadSchoolListTemplate } from '../utils/schoolListExcel'
 import { fetchSchoolsRequest, uploadSchoolListRequest } from '../../../api/schools.api'
 import UploadSchoolListModal from './UploadSchoolListModal'
@@ -46,9 +44,6 @@ function UploadIcon({ className = 'h-4 w-4' }) {
 }
 
 export default function SchoolManagementCard({ directoryVersion, onDirectoryChanged }) {
-  const { schools, isLoading } = useSchoolRecords()
-  const baseDirectory = useMemo(() => computeSchoolDirectory(schools), [schools])
-
   const [backendSchools, setBackendSchools] = useState(null)
   const isBackendLoading = backendSchools === null
 
@@ -85,12 +80,7 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
     }
   }, [directoryVersion])
 
-  const directory = useMemo(() => {
-    const merged = new Map()
-    baseDirectory.forEach((school) => merged.set(school.udise, school))
-    ;(backendSchools ?? []).forEach((school) => merged.set(school.udise, school))
-    return Array.from(merged.values())
-  }, [baseDirectory, backendSchools])
+  const directory = backendSchools ?? []
 
   const showSingleResultPopup = (result) => {
     if (result.status === 'registered') {
@@ -195,7 +185,7 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
           Current Schools ({directory.length}) — these UDISEs can log in as teachers
         </p>
 
-        {isLoading || isBackendLoading ? (
+        {isBackendLoading ? (
           <div className="flex justify-center py-16">
             <Spinner className="h-6 w-6 text-slate-400" />
           </div>

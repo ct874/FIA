@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import Spinner from '../../../components/ui/Spinner'
+import ErrorState from '../../../components/ui/ErrorState'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
 import { loadProgrammeSetup } from '../utils/programmeSetup'
 import {
@@ -51,7 +52,7 @@ function RefreshIcon({ className = 'h-3.5 w-3.5' }) {
 }
 
 export default function ExportPreviewCard({ directoryVersion }) {
-  const { schools, isLoading } = useSchoolRecords()
+  const { schools, isLoading, error, refetch } = useSchoolRecords()
   const [activeTab, setActiveTab] = useState('studentFeedback')
   const [range, setRange] = useState({ start: null, end: null })
   const [refreshKey, setRefreshKey] = useState(0)
@@ -230,6 +231,8 @@ export default function ExportPreviewCard({ directoryVersion }) {
         <div className="flex justify-center py-16">
           <Spinner className="h-6 w-6 text-slate-400" />
         </div>
+      ) : error ? (
+        <ErrorState message={error} onRetry={refetch} />
       ) : (
         <div className="mt-2 overflow-x-auto rounded-2xl border border-slate-200">
           <table className="w-full border-collapse text-left text-xs">

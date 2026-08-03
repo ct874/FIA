@@ -5,6 +5,7 @@ import PasswordInput from '../../../components/ui/PasswordInput'
 import Checkbox from '../../../components/ui/Checkbox'
 import Button from '../../../components/ui/Button'
 import { useTeacherAuth } from '../../../hooks/useTeacherAuth'
+import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { TEACHER_ROUTES } from '../../../utils/constants'
 
 const INITIAL_FORM = { udise: '', password: '' }
@@ -38,7 +39,7 @@ export default function TeacherLoginForm() {
       await login({ ...form, rememberMe })
       navigate(TEACHER_ROUTES.DASHBOARD, { replace: true })
     } catch (error) {
-      setFormError(error.message || 'Unable to sign in. Please check your UDISE and password.')
+      setFormError(getApiErrorMessage(error, 'Unable to sign in. Please check your UDISE and password.'))
     } finally {
       setIsSubmitting(false)
     }

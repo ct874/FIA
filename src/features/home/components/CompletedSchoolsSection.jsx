@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import Spinner from '../../../components/ui/Spinner'
+import ErrorState from '../../../components/ui/ErrorState'
 import SummaryCard from '../../../components/ui/SummaryCard'
 import DashboardTable from '../../../components/table/DashboardTable'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
@@ -29,7 +30,7 @@ const COLUMNS = [
 ]
 
 export default function CompletedSchoolsSection() {
-  const { schools, isLoading } = useSchoolRecords()
+  const { schools, isLoading, error, refetch } = useSchoolRecords()
   const rows = useMemo(() => computeCompletedRows(schools), [schools])
   const summary = useMemo(() => computeCompletedSchoolsSummary(rows), [rows])
 
@@ -47,6 +48,8 @@ export default function CompletedSchoolsSection() {
         <div className="flex justify-center py-16">
           <Spinner className="h-6 w-6 text-slate-400" />
         </div>
+      ) : error ? (
+        <ErrorState message={error} onRetry={refetch} />
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

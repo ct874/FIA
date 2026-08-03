@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import Spinner from '../../../components/ui/Spinner'
+import ErrorState from '../../../components/ui/ErrorState'
 import DashboardHeroBanner from './DashboardHeroBanner'
 import DashboardFilterBar from './DashboardFilterBar'
 import SummaryCard from '../../../components/ui/SummaryCard'
@@ -26,7 +27,7 @@ function buildResultLabel(filters, options) {
 }
 
 export default function DashboardOverview() {
-  const { schools, isLoading } = useSchoolRecords()
+  const { schools, isLoading, error, refetch } = useSchoolRecords()
   const [filters, setFilters] = useState(INITIAL_FILTERS)
 
   const options = useMemo(() => getOverviewFilterOptions(schools), [schools])
@@ -55,6 +56,8 @@ export default function DashboardOverview() {
         <div className="flex justify-center py-16">
           <Spinner className="h-6 w-6 text-slate-400" />
         </div>
+      ) : error ? (
+        <ErrorState message={error} onRetry={refetch} />
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

@@ -1,240 +1,251 @@
-import { useState } from 'react'
-import Select from '../../../components/ui/Select'
-import RatingScale from '../../../components/ui/RatingScale'
-import TextArea from '../../../components/ui/TextArea'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import TextInput from '../../../components/ui/TextInput'
 import Button from '../../../components/ui/Button'
-import { useTeacherAuth } from '../../../hooks/useTeacherAuth'
-import { TOURS } from '../../../data/schoolRecords.schema'
-import { addTeacherSubmission } from '../../../services/teacherSubmissions.service'
+import Skeleton from '../../../components/ui/Skeleton'
+import WorkflowStepper from '../../../components/ui/WorkflowStepper'
+import TourFeedbackFields from '../components/TourFeedbackFields'
+import { useTeacherStatus } from '../../../hooks/useTeacherStatus'
+import { useToast } from '../../../hooks/useToast'
+import { fetchTeacherFeedback, submitTeacherFeedback } from '../../../api/teacherFeedback.api'
+import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
+import { TEACHER_ROUTES } from '../../../utils/constants'
 
-const TOUR_OPTIONS = Object.values(TOURS).map((tour) => ({ value: tour.id, label: tour.name }))
-const LANGUAGE_OPTIONS = [
-  { value: 'Hindi', label: 'Hindi' },
-  { value: 'English', label: 'English' },
-]
-
-const INITIAL_FORM = {
-  tourId: '',
-  language: '',
-  enjoyment: null,
-  overallExperience: null,
-  itp: null,
-  wantExploreCareer: null,
-  wantMoreTours: null,
-  nps: null,
-  satisfactionResources: null,
-  easeIntegration: null,
-  biggestBenefit: '',
-  improvements: '',
+function npsLabel(score) {
+  if (score >= 9) return 'Promoter'
+  if (score >= 7) return 'Passive'
+  return 'Detractor'
 }
 
-function YesNoToggle({ label, value, onChange }) {
+function SubmittedSummary({ submissions, status }) {
+  const navigate = useNavigate()
+  const first = submissions[0]
+
   return (
-    <div className="w-full">
-      <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
-      <div className="inline-flex overflow-hidden rounded-xl border border-slate-200">
-        {[
-          { label: 'Yes', val: true },
-          { label: 'No', val: false },
-        ].map((option) => (
-          <button
-            key={option.label}
-            type="button"
-            onClick={() => onChange(option.val)}
-            className={`px-5 py-2 text-sm font-semibold transition-all duration-150 ease-out ${
-              value === option.val
-                ? 'bg-slate-900 text-white'
-                : 'bg-white text-slate-600 hover:bg-slate-100'
-            }`}
+    <>
+      <div className="animate-fade-in-up rounded-3xl bg-linear-to-br from-slate-800 to-slate-950 p-6 text-center text-white shadow-xl shadow-slate-900/20 sm:p-8">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500">
+          <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-white" aria-hidden="true">
+            <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <h2 className="mt-4 text-lg font-semibold sm:text-xl">Your Teacher Feedback</h2>
+        <p className="mt-1 text-sm text-slate-300">
+          You've already submitted your feedback for this school. Here's a summary of your responses (view only).
+        </p>
+
+        {first && (
+          <div className="mt-6 rounded-2xl bg-white/5 p-5 text-left text-sm">
+            <p>
+              <span className="font-semibold text-amber-300">Submitted by:</span> {first.submittedBy}
+            </p>
+            {first.contactNumber && (
+              <p className="mt-1">
+                <span className="font-semibold text-amber-300">Contact:</span> {first.contactNumber}
+              </p>
+            )}
+            <p className="mt-1">
+              <span className="font-semibold text-amber-300">Month:</span> {first.month}
+            </p>
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+          <Button className="w-auto! px-6" onClick={() => navigate(TEACHER_ROUTES.REACH_DATA)}>
+            Go to Student Reach →
+          </Button>
+          <Button
+            className="w-auto! bg-white/10 px-6 hover:bg-white/20"
+            disabled={!status.reachSubmitted}
+            onClick={() => navigate(TEACHER_ROUTES.STUDENT_FEEDBACK)}
           >
-            {option.label}
-          </button>
+            Go to Student Feedback →
+          </Button>
+        </div>
+      </div>
+
+      <p className="mt-8 mb-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">
+        Your Submitted Responses
+      </p>
+      <div className="space-y-4">
+        {submissions.map((submission) => (
+          <div
+            key={submission.id}
+            className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-900/5 sm:p-6"
+          >
+            <h3 className="text-sm font-semibold text-slate-900">{submission.tourName}</h3>
+
+            <dl className="mt-3 divide-y divide-slate-100 text-sm">
+              <div className="flex items-center justify-between py-2">
+                <dt className="text-slate-500">How likely to recommend to other teachers? (0-10)</dt>
+                <dd className="font-semibold text-slate-900">
+                  {submission.recommendScore}{' '}
+                  <span className="text-xs font-normal text-slate-400">
+                    {npsLabel(submission.recommendScore)}
+                  </span>
+                </dd>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <dt className="text-slate-500">Satisfaction with resources provided (1-5)</dt>
+                <dd className="font-semibold text-slate-900">{submission.satisfactionResources}/5</dd>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <dt className="text-slate-500">Ease of integrating into lesson plan (1-5)</dt>
+                <dd className="font-semibold text-slate-900">{submission.easeIntegration}/5</dd>
+              </div>
+              {submission.biggestBenefit && (
+                <div className="py-2">
+                  <dt className="text-slate-500">Biggest benefit for students:</dt>
+                  <dd className="mt-1 text-slate-700 italic">"{submission.biggestBenefit}"</dd>
+                </div>
+              )}
+              {submission.improvements && (
+                <div className="py-2">
+                  <dt className="text-slate-500">Suggestions for improvement:</dt>
+                  <dd className="mt-1 text-slate-700 italic">"{submission.improvements}"</dd>
+                </div>
+              )}
+            </dl>
+          </div>
         ))}
       </div>
-    </div>
+    </>
   )
 }
 
 export default function TeacherFeedbackPage() {
-  const { teacher } = useTeacherAuth()
-  const [form, setForm] = useState(INITIAL_FORM)
-  const [errors, setErrors] = useState({})
-  const [submitted, setSubmitted] = useState(false)
+  const toast = useToast()
+  const { status, meta, refetchStatus } = useTeacherStatus()
 
-  const setField = (field) => (value) => {
-    setForm((prev) => ({ ...prev, [field]: value }))
-    setErrors((prev) => ({ ...prev, [field]: undefined }))
-  }
+  const [submissions, setSubmissions] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [submittedBy, setSubmittedBy] = useState('')
+  const [contactNumber, setContactNumber] = useState('')
+  const [answers, setAnswers] = useState({})
+  const [errors, setErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const load = async () => {
+      try {
+        const { data } = await fetchTeacherFeedback()
+        if (isMounted) setSubmissions(data.data.submissions)
+      } catch (error) {
+        if (isMounted) toast.error(getApiErrorMessage(error, 'Could not load teacher feedback.'))
+      } finally {
+        if (isMounted) setIsLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      isMounted = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const alreadySubmitted = submissions.length > 0
 
   const validate = () => {
-    const required = [
-      'tourId', 'language', 'enjoyment', 'overallExperience', 'itp',
-      'wantExploreCareer', 'wantMoreTours', 'nps', 'satisfactionResources', 'easeIntegration',
-    ]
-    const nextErrors = {}
-    required.forEach((field) => {
-      if (form[field] === null || form[field] === '') nextErrors[field] = 'Required'
+    const nextErrors = { tours: {} }
+    if (!submittedBy.trim()) nextErrors.submittedBy = 'Your name is required.'
+
+    meta.tours.forEach((tour) => {
+      const value = answers[tour.tourId] || {}
+      const tourErrors = {}
+      if (!value.language) tourErrors.language = 'Required'
+      if (value.recommendScore === undefined || value.recommendScore === null) {
+        tourErrors.recommendScore = 'Required'
+      }
+      if (!value.satisfactionResources) tourErrors.satisfactionResources = 'Required'
+      if (!value.easeIntegration) tourErrors.easeIntegration = 'Required'
+      if (Object.keys(tourErrors).length > 0) nextErrors.tours[tour.tourId] = tourErrors
     })
+
     return nextErrors
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     const nextErrors = validate()
+    const hasTourErrors = Object.values(nextErrors.tours).some((e) => Object.keys(e).length > 0)
     setErrors(nextErrors)
-    if (Object.keys(nextErrors).length > 0) return
+    if (nextErrors.submittedBy || hasTourErrors) return
 
-    const tour = Object.values(TOURS).find((item) => item.id === form.tourId)
-
-    // Shaped exactly like a canonical TourEntry.teacherFeedback entry (see
-    // src/data/schoolRecords.schema.js) so wiring this up to a real POST
-    // endpoint later is a straight swap. `nps` here is the raw 0-10 rating;
-    // the classroom-aggregate NPS % (PDF formula) is computed once multiple
-    // submissions roll in on the backend.
-    const payload = {
-      udise: teacher.udise,
-      schoolName: teacher.schoolName,
-      tourId: tour.id,
-      tourName: tour.name,
-      language: form.language,
-      teacherFeedback: {
-        submittedBy: teacher.schoolName,
-        enjoyment: form.enjoyment,
-        overallExperience: form.overallExperience,
-        itp: form.itp,
-        wantExploreCareer: form.wantExploreCareer,
-        wantMoreTours: form.wantMoreTours,
-        recommendScore: form.nps,
-        satisfactionResources: form.satisfactionResources,
-        easeIntegration: form.easeIntegration,
-        biggestBenefit: form.biggestBenefit.trim(),
-        improvements: form.improvements.trim(),
-      },
+    setIsSubmitting(true)
+    try {
+      const payload = {
+        submittedBy: submittedBy.trim(),
+        contactNumber: contactNumber.trim(),
+        tours: meta.tours.map((tour) => ({ tourId: tour.tourId, ...answers[tour.tourId] })),
+      }
+      const { data } = await submitTeacherFeedback(payload)
+      setSubmissions(data.data.submissions)
+      toast.success('Feedback Submitted Successfully')
+      await refetchStatus()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Could not submit feedback.'))
+    } finally {
+      setIsSubmitting(false)
     }
-    // TODO: replace with a real API call, e.g. axiosClient.post('/teacher/feedback', payload)
-    console.log('Teacher feedback submitted (dummy, no backend yet):', payload)
-    addTeacherSubmission('feedback', payload)
-
-    setSubmitted(true)
-    setForm(INITIAL_FORM)
   }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+      <WorkflowStepper currentStep={1} completedSteps={status.teacherFeedbackCompleted ? [1] : []} />
+
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Teacher Feedback</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Share your experience running a Career Tour session.
-        </p>
       </div>
 
-      {submitted && (
-        <div
-          role="status"
-          className="mb-6 animate-fade-in-up rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700"
+      {isLoading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-48" />
+          <Skeleton className="h-32" />
+        </div>
+      ) : alreadySubmitted ? (
+        <SubmittedSummary submissions={submissions} status={status} />
+      ) : (
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="space-y-6 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8"
         >
-          Thank you — your feedback has been recorded.
-        </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <TextInput
+              id="submittedBy"
+              label="Your Name"
+              placeholder="e.g. Pragya"
+              value={submittedBy}
+              onChange={(event) => setSubmittedBy(event.target.value)}
+              error={errors.submittedBy}
+            />
+            <TextInput
+              id="contactNumber"
+              label="Contact Number (optional)"
+              placeholder="e.g. 9950144083"
+              value={contactNumber}
+              onChange={(event) => setContactNumber(event.target.value)}
+            />
+          </div>
+
+          {meta.tours.map((tour) => (
+            <TourFeedbackFields
+              key={tour.tourId}
+              tour={tour}
+              value={answers[tour.tourId] || {}}
+              onChange={(next) => setAnswers((prev) => ({ ...prev, [tour.tourId]: next }))}
+              errors={errors.tours?.[tour.tourId] || {}}
+            />
+          ))}
+
+          <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
+            {isSubmitting ? 'Submitting…' : 'Submit Feedback'}
+          </Button>
+        </form>
       )}
-
-      <form
-        onSubmit={handleSubmit}
-        noValidate
-        className="space-y-6 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8"
-      >
-        <Select
-          id="tourId"
-          label="Which Career Tour are you giving feedback on?"
-          placeholder="Select a Career Tour"
-          options={TOUR_OPTIONS}
-          value={form.tourId}
-          onChange={(event) => setField('tourId')(event.target.value)}
-          error={errors.tourId && 'Please select a tour.'}
-        />
-
-        <Select
-          id="language"
-          label="In which language did you watch the Career Tour?"
-          placeholder="Select a language"
-          options={LANGUAGE_OPTIONS}
-          value={form.language}
-          onChange={(event) => setField('language')(event.target.value)}
-          error={errors.language && 'Please select a language.'}
-        />
-
-        <RatingScale
-          label="How much did you enjoy this Career Tour? (1 = Didn't like it at all, 5 = Loved it)"
-          value={form.enjoyment}
-          onChange={setField('enjoyment')}
-          error={errors.enjoyment && 'Please choose a rating.'}
-        />
-
-        <RatingScale
-          label="Please rate your overall experience of the tour (1 = Very Poor, 5 = Excellent)"
-          value={form.overallExperience}
-          onChange={setField('overallExperience')}
-          error={errors.overallExperience && 'Please choose a rating.'}
-        />
-
-        <RatingScale
-          label="How interested are your students in learning more about careers of the future? (1 = Not at all, 5 = Very interested)"
-          value={form.itp}
-          onChange={setField('itp')}
-          error={errors.itp && 'Please choose a rating.'}
-        />
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <YesNoToggle
-            label="Did the tour make students want to explore a career of the future?"
-            value={form.wantExploreCareer}
-            onChange={setField('wantExploreCareer')}
-          />
-          <YesNoToggle
-            label="Would you like to see more tours like this?"
-            value={form.wantMoreTours}
-            onChange={setField('wantMoreTours')}
-          />
-        </div>
-
-        <RatingScale
-          label="How likely are you to recommend this tour to other teachers/schools? (0 = Not at all likely, 10 = Extremely likely)"
-          min={0}
-          max={10}
-          value={form.nps}
-          onChange={setField('nps')}
-          error={errors.nps && 'Please choose a rating.'}
-        />
-
-        <RatingScale
-          label="How satisfied are you with the resources provided (Teacher Toolkit, worksheets, facilitation guide)? (1 = Extremely dissatisfied, 5 = Extremely satisfied)"
-          value={form.satisfactionResources}
-          onChange={setField('satisfactionResources')}
-          error={errors.satisfactionResources && 'Please choose a rating.'}
-        />
-
-        <RatingScale
-          label="How easy was it to integrate this tour into your classroom lesson plan? (1 = Extremely difficult, 5 = Extremely easy)"
-          value={form.easeIntegration}
-          onChange={setField('easeIntegration')}
-          error={errors.easeIntegration && 'Please choose a rating.'}
-        />
-
-        <TextArea
-          id="biggestBenefit"
-          label="What was the biggest benefit for your students from this tour?"
-          value={form.biggestBenefit}
-          onChange={(event) => setField('biggestBenefit')(event.target.value)}
-        />
-
-        <TextArea
-          id="improvements"
-          label="What improvements would you suggest for future tours?"
-          value={form.improvements}
-          onChange={(event) => setField('improvements')(event.target.value)}
-        />
-
-        <Button type="submit">Submit Feedback</Button>
-      </form>
     </div>
   )
 }

@@ -1,185 +1,234 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import TextInput from '../../../components/ui/TextInput'
 import Select from '../../../components/ui/Select'
+import Checkbox from '../../../components/ui/Checkbox'
 import Button from '../../../components/ui/Button'
-import { useTeacherAuth } from '../../../hooks/useTeacherAuth'
-import { TOURS } from '../../../data/schoolRecords.schema'
-import { addTeacherSubmission } from '../../../services/teacherSubmissions.service'
+import Skeleton from '../../../components/ui/Skeleton'
+import WorkflowStepper from '../../../components/ui/WorkflowStepper'
+import { useTeacherStatus } from '../../../hooks/useTeacherStatus'
+import { useToast } from '../../../hooks/useToast'
+import { fetchStudentReach, submitStudentReach } from '../../../api/studentReach.api'
+import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 
-const TOUR_OPTIONS = Object.values(TOURS).map((tour) => ({ value: tour.id, label: tour.name }))
-const LANGUAGE_OPTIONS = [
-  { value: 'Hindi', label: 'Hindi' },
-  { value: 'English', label: 'English' },
-]
-const MONTH_OPTIONS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-].map((month) => ({ value: month, label: month }))
+const MIN_VISIBLE_GRADE = 6
+const EMPTY_FORM = { grade: '', studentCount: '', tourIds: [] }
 
-const INITIAL_FORM = {
-  grade: '',
-  classSection: '',
-  tourId: '',
-  language: '',
-  month: '',
-  studentsReached: '',
-  uniqueStudentCount: '',
+function CheckBadgeIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function PreviouslyAddedGrades({ records }) {
+  if (records.length === 0) return null
+
+  return (
+    <div className="mb-6">
+      <p className="mb-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">
+        Previously Added Grades
+      </p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {records.map((record) => (
+          <div
+            key={record.id}
+            className="animate-fade-in-up rounded-2xl border border-green-200 bg-green-50/60 p-5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-green-500 text-white">
+                <CheckBadgeIcon className="h-3.5 w-3.5" />
+              </span>
+              <h3 className="text-base font-semibold text-slate-900">Grade {record.grade}</h3>
+            </div>
+
+            <p className="mt-3 text-sm text-slate-600">
+              <span className="font-medium text-slate-500">Students:</span>{' '}
+              <span className="font-semibold text-slate-900">{record.studentsReached}</span>
+            </p>
+
+            <div className="mt-2">
+              <p className="text-sm font-medium text-slate-500">Tours:</p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {record.tours.map((tour) => (
+                  <span
+                    key={tour.tourId}
+                    className="rounded-full border border-green-200 bg-white px-2.5 py-1 text-xs font-medium text-green-700"
+                  >
+                    {tour.tourName}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function ReachDataPage() {
-  const { teacher } = useTeacherAuth()
-  const [form, setForm] = useState(INITIAL_FORM)
-  const [errors, setErrors] = useState({})
-  const [submittedSummary, setSubmittedSummary] = useState(null)
+  const toast = useToast()
+  const { status, meta, refetchStatus } = useTeacherStatus()
 
-  const handleChange = (field) => (event) => {
-    setForm((prev) => ({ ...prev, [field]: event.target.value }))
-    setErrors((prev) => ({ ...prev, [field]: undefined }))
+  const [records, setRecords] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [errors, setErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const loadRecords = async () => {
+    const { data } = await fetchStudentReach()
+    setRecords(data.data.records)
+  }
+
+  useEffect(() => {
+    let isMounted = true
+
+    const load = async () => {
+      try {
+        await loadRecords()
+      } catch (error) {
+        if (isMounted) toast.error(getApiErrorMessage(error, 'Could not load reach data.'))
+      } finally {
+        if (isMounted) setIsLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      isMounted = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Grades 6–12 only, and always available — a grade already recorded can
+  // be selected again; the backend merges it into the same document.
+  const gradeOptions = useMemo(
+    () =>
+      meta.grades
+        .filter((grade) => Number(grade) >= MIN_VISIBLE_GRADE)
+        .map((grade) => ({ value: grade, label: `Grade ${grade}` })),
+    [meta.grades],
+  )
+
+  const toggleTour = (tourId) => {
+    setForm((prev) => ({
+      ...prev,
+      tourIds: prev.tourIds.includes(tourId)
+        ? prev.tourIds.filter((id) => id !== tourId)
+        : [...prev.tourIds, tourId],
+    }))
   }
 
   const validate = () => {
     const nextErrors = {}
-    if (!form.grade.trim()) nextErrors.grade = 'Grade is required.'
-    if (!form.tourId) nextErrors.tourId = 'Please select a Career Tour.'
-    if (!form.language) nextErrors.language = 'Please select a language.'
-    if (!form.month) nextErrors.month = 'Please select a month.'
-    if (!form.studentsReached || Number(form.studentsReached) <= 0) {
-      nextErrors.studentsReached = 'Enter the number of students reached.'
+    if (!form.grade) nextErrors.grade = 'Select a grade.'
+    if (!form.studentCount || Number(form.studentCount) <= 0) {
+      nextErrors.studentCount = 'Enter the number of students.'
     }
-    if (!form.uniqueStudentCount || Number(form.uniqueStudentCount) <= 0) {
-      nextErrors.uniqueStudentCount = 'Enter the total unique student count.'
-    }
+    if (form.tourIds.length === 0) nextErrors.tourIds = 'Select at least one Career Tour.'
     return nextErrors
   }
 
-  const handleSubmit = (event) => {
+  const handleAdd = async (event) => {
     event.preventDefault()
     const nextErrors = validate()
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
 
-    const tour = Object.values(TOURS).find((item) => item.id === form.tourId)
-
-    // Shaped exactly like a canonical TourEntry.reach entry (see
-    // src/data/schoolRecords.schema.js) so wiring this up to a real POST
-    // endpoint later is a straight swap.
-    const payload = {
-      udise: teacher.udise,
-      schoolName: teacher.schoolName,
-      grade: form.grade.trim(),
-      section: form.classSection.trim(),
-      tourId: tour.id,
-      tourName: tour.name,
-      month: form.month,
-      language: form.language,
-      reach: {
-        studentsReached: Number(form.studentsReached),
-        uniqueStudentCount: Number(form.uniqueStudentCount),
-      },
+    setIsSubmitting(true)
+    try {
+      await submitStudentReach({
+        grade: form.grade,
+        studentsReached: Number(form.studentCount),
+        uniqueStudentCount: Number(form.studentCount),
+        tourIds: form.tourIds,
+      })
+      toast.success('Reach Saved Successfully')
+      setForm(EMPTY_FORM)
+      await Promise.all([loadRecords(), refetchStatus()])
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Could not save reach data.'))
+    } finally {
+      setIsSubmitting(false)
     }
-    // TODO: replace with a real API call, e.g. axiosClient.post('/teacher/reach-data', payload)
-    console.log('Reach data submitted (dummy, no backend yet):', payload)
-    addTeacherSubmission('reach', payload)
+  }
 
-    setSubmittedSummary(payload)
-    setForm(INITIAL_FORM)
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-4 px-4 py-8 sm:px-6 lg:px-8">
+        <Skeleton className="h-32" />
+        <Skeleton className="h-64" />
+      </div>
+    )
   }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+      <WorkflowStepper currentStep={2} completedSteps={status.teacherFeedbackCompleted ? [1] : []} />
+
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Student Reach Data</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Student Reach</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Log how many students watched each Career Tour video in your class.
+          Add a grade every time you run a Career Tour — adding the same grade again merges into its
+          existing totals instead of replacing them.
         </p>
       </div>
 
-      {submittedSummary && (
-        <div
-          role="status"
-          className="mb-6 animate-fade-in-up rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700"
-        >
-          Reach data saved for Grade {submittedSummary.grade} · {submittedSummary.tourName} (
-          {submittedSummary.reach.uniqueStudentCount} unique students).
-        </div>
-      )}
+      <PreviouslyAddedGrades records={records} />
 
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleAdd}
         noValidate
         className="space-y-5 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <TextInput
+          <Select
             id="grade"
             label="Grade"
-            placeholder="e.g. 8"
+            placeholder="-- Select --"
+            options={gradeOptions}
             value={form.grade}
-            onChange={handleChange('grade')}
+            onChange={(event) => setForm((prev) => ({ ...prev, grade: event.target.value }))}
             error={errors.grade}
           />
           <TextInput
-            id="classSection"
-            label="Class Section (optional)"
-            placeholder="e.g. A"
-            value={form.classSection}
-            onChange={handleChange('classSection')}
-          />
-        </div>
-
-        <Select
-          id="tourId"
-          label="Which career tour did you attend?"
-          placeholder="Select a Career Tour"
-          options={TOUR_OPTIONS}
-          value={form.tourId}
-          onChange={handleChange('tourId')}
-          error={errors.tourId}
-        />
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Select
-            id="language"
-            label="Language watched in"
-            placeholder="Select a language"
-            options={LANGUAGE_OPTIONS}
-            value={form.language}
-            onChange={handleChange('language')}
-            error={errors.language}
-          />
-          <Select
-            id="month"
-            label="Month"
-            placeholder="Select a month"
-            options={MONTH_OPTIONS}
-            value={form.month}
-            onChange={handleChange('month')}
-            error={errors.month}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <TextInput
-            id="studentsReached"
-            label="No. of Students Reached"
+            id="studentCount"
+            label="Number of Students"
             type="number"
             min="0"
-            value={form.studentsReached}
-            onChange={handleChange('studentsReached')}
-            error={errors.studentsReached}
-          />
-          <TextInput
-            id="uniqueStudentCount"
-            label="Total Unique Student Count"
-            type="number"
-            min="0"
-            value={form.uniqueStudentCount}
-            onChange={handleChange('uniqueStudentCount')}
-            error={errors.uniqueStudentCount}
+            placeholder="e.g. 40"
+            value={form.studentCount}
+            onChange={(event) => setForm((prev) => ({ ...prev, studentCount: event.target.value }))}
+            error={errors.studentCount}
           />
         </div>
 
-        <Button type="submit">Submit Reach Data</Button>
+        <div>
+          <p className="mb-2 text-sm font-medium text-slate-700">Career Tours — select all that apply</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {meta.tours.map((tour) => (
+              <label
+                key={tour.tourId}
+                className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition-colors duration-150 hover:bg-slate-50"
+              >
+                <Checkbox
+                  id={`tour-${tour.tourId}`}
+                  checked={form.tourIds.includes(tour.tourId)}
+                  onChange={() => toggleTour(tour.tourId)}
+                  label=""
+                />
+                {tour.tourName}
+              </label>
+            ))}
+          </div>
+          {errors.tourIds && <p className="mt-1.5 text-xs font-medium text-red-500">{errors.tourIds}</p>}
+        </div>
+
+        <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
+          {isSubmitting ? 'Saving…' : 'Add Grade'}
+        </Button>
       </form>
     </div>
   )

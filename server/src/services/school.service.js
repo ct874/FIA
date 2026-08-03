@@ -1,6 +1,9 @@
 import * as XLSX from 'xlsx'
+import bcrypt from 'bcryptjs'
 import { School } from '../models/school.model.js'
 import { ApiError } from '../utils/ApiError.js'
+
+const SALT_ROUNDS = 12
 
 const REQUIRED_COLUMNS = ['UDISE', 'School Name', 'District', 'State']
 
@@ -111,12 +114,18 @@ export async function processSchoolListUpload(buffer) {
   })
 
   if (toInsert.length > 0) {
-    const docs = toInsert.map((row) => ({
-      udise: row.udise,
-      schoolName: row.schoolName,
-      district: row.district,
-      state: row.state,
-    }))
+    // insertMany bypasses the School model's pre('save') hash hook, so the
+    // default password (the UDISE itself) is hashed explicitly here — this
+    // is what turns an uploaded school row into a working Teacher Portal login.
+    const docs = await Promise.all(
+      toInsert.map(async (row) => ({
+        udise: row.udise,
+        schoolName: row.schoolName,
+        district: row.district,
+        state: row.state,
+        password: await bcrypt.hash(row.udise, SALT_ROUNDS),
+      })),
+    )
 
     try {
       await School.insertMany(docs, { ordered: false })

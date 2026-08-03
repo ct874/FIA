@@ -2,38 +2,62 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import FiaLogo from '../branding/FiaLogo'
 import { useTeacherAuth } from '../../hooks/useTeacherAuth'
+import { useTeacherStatus } from '../../hooks/useTeacherStatus'
 import { TEACHER_ROUTES } from '../../utils/constants'
 
-const NAV_LINKS = [
-  { label: 'Reach Data', to: TEACHER_ROUTES.REACH_DATA },
-  { label: 'Teacher Feedback', to: TEACHER_ROUTES.FEEDBACK },
+const WORKFLOW_STEPS = [
+  {
+    key: 'feedback',
+    label: 'Teacher Feedback',
+    to: TEACHER_ROUTES.FEEDBACK,
+    isUnlocked: () => true,
+    isCompleted: (status) => status.teacherFeedbackCompleted,
+  },
+  {
+    key: 'reach',
+    label: 'Student Reach',
+    to: TEACHER_ROUTES.REACH_DATA,
+    isUnlocked: (status) => status.teacherFeedbackCompleted,
+    isCompleted: (status) => status.reachSubmitted,
+  },
+  {
+    key: 'studentFeedback',
+    label: 'Student Feedback',
+    to: TEACHER_ROUTES.STUDENT_FEEDBACK,
+    isUnlocked: (status) => status.reachSubmitted,
+    isCompleted: (status) => status.studentFeedbackCompleted,
+  },
+  {
+    key: 'responses',
+    label: 'All Responses',
+    to: TEACHER_ROUTES.RESPONSES,
+    isUnlocked: (status) => status.studentFeedbackCompleted,
+    isCompleted: () => false,
+  },
 ]
 
-function navLinkClassName({ isActive }) {
-  return `rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-all duration-200 ease-out lg:px-4 ${
-    isActive
-      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
-      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-  }`
+function CheckIcon({ className = 'h-3.5 w-3.5' }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function LockIcon({ className = 'h-3.5 w-3.5' }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
 }
 
 function LogoutIcon({ className = 'h-4 w-4' }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path
-        d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M16 17l5-5-5-5M21 12H9"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -51,6 +75,58 @@ function CloseIcon({ className = 'h-6 w-6' }) {
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  )
+}
+
+function navLinkClassName({ isActive }) {
+  return `rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-all duration-200 ease-out lg:px-4 ${
+    isActive
+      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
+      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+  }`
+}
+
+function DashboardTab({ onClick }) {
+  return (
+    <NavLink to={TEACHER_ROUTES.DASHBOARD} onClick={onClick} className={navLinkClassName}>
+      Dashboard
+    </NavLink>
+  )
+}
+
+function WorkflowTab({ step, status, onClick }) {
+  const unlocked = step.isUnlocked(status)
+  const completed = step.isCompleted(status)
+
+  if (!unlocked) {
+    return (
+      <span
+        role="link"
+        aria-disabled="true"
+        tabIndex={-1}
+        title="Complete previous step first"
+        className="group relative inline-flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium whitespace-nowrap text-slate-400 opacity-60 lg:px-4"
+      >
+        <LockIcon className="h-3.5 w-3.5 text-amber-500" />
+        {step.label}
+        <span className="pointer-events-none absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+          Complete previous step first
+        </span>
+      </span>
+    )
+  }
+
+  return (
+    <NavLink to={step.to} onClick={onClick} className={navLinkClassName}>
+      <span className="inline-flex items-center gap-1.5">
+        {completed && (
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-white">
+            <CheckIcon className="h-2.5 w-2.5" />
+          </span>
+        )}
+        {step.label}
+      </span>
+    </NavLink>
   )
 }
 
@@ -74,6 +150,7 @@ function LogoutButton({ className = '', onClick }) {
 export default function TeacherNavbar() {
   const navigate = useNavigate()
   const { teacher, logout } = useTeacherAuth()
+  const { status } = useTeacherStatus()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   useEffect(() => {
@@ -104,10 +181,9 @@ export default function TeacherNavbar() {
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex lg:gap-2">
-            {NAV_LINKS.map((link) => (
-              <NavLink key={link.to} to={link.to} className={navLinkClassName}>
-                {link.label}
-              </NavLink>
+            <DashboardTab />
+            {WORKFLOW_STEPS.map((step) => (
+              <WorkflowTab key={step.key} step={step} status={status} />
             ))}
           </nav>
 
@@ -126,9 +202,6 @@ export default function TeacherNavbar() {
         </div>
       </header>
 
-      {/* Rendered as a sibling of <header>, not a descendant — backdrop-blur on
-          the header creates a containing block for fixed children, which would
-          otherwise clip these to the header's own height instead of the viewport. */}
       <div
         aria-hidden={!isDrawerOpen}
         onClick={closeDrawer}
@@ -158,10 +231,9 @@ export default function TeacherNavbar() {
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 p-4">
-          {NAV_LINKS.map((link) => (
-            <NavLink key={link.to} to={link.to} onClick={closeDrawer} className={navLinkClassName}>
-              {link.label}
-            </NavLink>
+          <DashboardTab onClick={closeDrawer} />
+          {WORKFLOW_STEPS.map((step) => (
+            <WorkflowTab key={step.key} step={step} status={status} onClick={closeDrawer} />
           ))}
         </nav>
 

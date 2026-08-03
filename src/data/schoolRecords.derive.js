@@ -1,71 +1,34 @@
 import { TOURS } from './schoolRecords.schema'
 
-function allTourEntries(school) {
-  return school.classes.flatMap((classRecord) =>
-    classRecord.tours.map((tour) => ({ school, classRecord, tour })),
-  )
-}
-
-function flattenAllEntries(schools) {
-  return schools.flatMap((school) => allTourEntries(school))
-}
-
-/**
- * Every {school, classRecord, tour} combination across all schools — the
- * shared traversal used by the export CSV builders.
- */
-export function flattenSchoolTours(schools) {
-  return flattenAllEntries(schools)
-}
-
-function entryMatchesFilters(entry, filters) {
-  if (filters.district && entry.school.district !== filters.district) return false
-  if (filters.tourId && entry.tour.tourId !== filters.tourId) return false
-  if (filters.month && entry.tour.month !== filters.month) return false
-  return true
-}
-
 function average(values) {
   if (values.length === 0) return null
   return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2))
 }
 
-/**
- * One row per individual feedback submission event (Teacher or Student),
- * for the "All Submissions" activity log. Reach-data entries aren't
- * submission "events" in the same sense, so they're intentionally excluded.
- */
-export function computeSubmissionRows(schools) {
-  const rows = []
+// True NPS: % promoters (score 9-10) minus % detractors (score 0-6), from the
+// real 0-10 "how likely to recommend" teacher answer — a -100..100 value,
+// matching the "%" the UI already expects.
+function computeNps(scores) {
+  if (scores.length === 0) return null
+  const promoters = scores.filter((score) => score >= 9).length
+  const detractors = scores.filter((score) => score <= 6).length
+  return Math.round(((promoters - detractors) / scores.length) * 100)
+}
 
-  flattenAllEntries(schools).forEach(({ school, classRecord, tour }) => {
-    if (tour.teacherFeedback) {
-      rows.push({
-        id: `sub-teacher-${school.udise}-${tour.tourId}-${classRecord.grade}`,
-        type: 'Teacher',
-        school: school.schoolName,
-        tour: tour.tourName,
-        grade: '—',
-        month: tour.month,
-        time: tour.teacherFeedback.submittedAt,
-        csat: null,
-      })
-    }
-    if (tour.studentFeedback) {
-      rows.push({
-        id: `sub-student-${school.udise}-${tour.tourId}-${classRecord.grade}`,
-        type: 'Student',
-        school: school.schoolName,
-        tour: tour.tourName,
-        grade: classRecord.grade,
-        month: tour.month,
-        time: tour.studentFeedback.submittedAt,
-        csat: tour.studentFeedback.csatAvg,
-      })
-    }
-  })
+function schoolMatchesFilters(school, filters) {
+  return !filters.district || school.district === filters.district
+}
 
-  return rows
+function reachMatchesFilters(reach, filters) {
+  if (filters.tourId && !reach.tours.some((tour) => tour.tourId === filters.tourId)) return false
+  if (filters.month && reach.month !== filters.month) return false
+  return true
+}
+
+function feedbackRowMatchesFilters(row, filters) {
+  if (filters.tourId && row.tourId !== filters.tourId) return false
+  if (filters.month && row.month !== filters.month) return false
+  return true
 }
 
 /**
@@ -73,41 +36,39 @@ export function computeSubmissionRows(schools) {
  */
 export function getOverviewFilterOptions(schools) {
   const districts = Array.from(new Set(schools.map((school) => school.district))).sort()
-  const months = Array.from(new Set(flattenAllEntries(schools).map(({ tour }) => tour.month)))
+  const months = Array.from(new Set(schools.flatMap((school) => school.reach.map((reach) => reach.month))))
   return { districts, months, tours: Object.values(TOURS) }
 }
 
 /**
  * Top-level KPI row for the Home dashboard overview: schools, reach,
- * feedback response counts, and overall CSAT/ITP (PDF formulas), all
- * respecting the district/tour/month filter.
+ * feedback response counts, and overall CSAT/ITP, all respecting the
+ * district/tour/month filter.
  */
 export function computeOverviewSummary(schools, filters = {}) {
-  const entries = flattenAllEntries(schools).filter((entry) => entryMatchesFilters(entry, filters))
-  const schoolIds = new Set(entries.map((entry) => entry.school.udise))
+  const filteredSchools = schools.filter((school) => schoolMatchesFilters(school, filters))
 
-  const totalReach = entries.reduce(
-    (sum, entry) => sum + (entry.tour.reach?.uniqueStudentCount ?? 0),
-    0,
+  const reachEntries = filteredSchools.flatMap((school) =>
+    school.reach.filter((reach) => reachMatchesFilters(reach, filters)).map((reach) => ({ school, reach })),
   )
-  const studentResponses = entries.reduce(
-    (sum, entry) => sum + (entry.tour.studentFeedback?.respondedCount ?? 0),
-    0,
+  const studentRows = filteredSchools.flatMap((school) =>
+    school.studentFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)),
   )
-  const teacherResponses = entries.filter((entry) => entry.tour.teacherFeedback).length
+  const teacherRows = filteredSchools.flatMap((school) =>
+    school.teacherFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)),
+  )
 
-  const csatValues = entries
-    .map((entry) => entry.tour.studentFeedback?.csatAvg)
-    .filter((value) => value != null)
-  const itpValues = entries
-    .map((entry) => entry.tour.studentFeedback?.itpAvg)
-    .filter((value) => value != null)
+  const schoolIds = new Set(reachEntries.map((entry) => entry.school.udise))
+  const totalReach = reachEntries.reduce((sum, entry) => sum + entry.reach.uniqueStudentCount, 0)
+
+  const csatValues = studentRows.map((row) => row.enjoyment).filter((value) => value != null)
+  const itpValues = studentRows.map((row) => row.interestInFutureCareer).filter((value) => value != null)
 
   return {
     schoolsCount: schoolIds.size,
     totalReach,
-    studentResponses,
-    teacherResponses,
+    studentResponses: studentRows.length,
+    teacherResponses: teacherRows.length,
     overallCsat: average(csatValues) ?? 0,
     overallItp: average(itpValues) ?? 0,
   }
@@ -118,57 +79,31 @@ export function computeOverviewSummary(schools, filters = {}) {
  * Tour" sections, respecting the district/tour/month filter.
  */
 export function computeTourBreakdown(schools, filters = {}) {
-  const entries = flattenAllEntries(schools).filter((entry) => entryMatchesFilters(entry, filters))
+  const filteredSchools = schools.filter((school) => schoolMatchesFilters(school, filters))
+  const studentRows = filteredSchools.flatMap((school) =>
+    school.studentFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)),
+  )
+  const teacherRows = filteredSchools.flatMap((school) =>
+    school.teacherFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)),
+  )
 
   return Object.values(TOURS).map((tour) => {
-    const tourEntries = entries.filter((entry) => entry.tour.tourId === tour.id)
-
-    const csatValues = tourEntries
-      .map((entry) => entry.tour.studentFeedback?.csatAvg)
-      .filter((value) => value != null)
-    const itpValues = tourEntries
-      .map((entry) => entry.tour.studentFeedback?.itpAvg)
-      .filter((value) => value != null)
-    const npsValues = tourEntries
-      .map((entry) => entry.tour.teacherFeedback?.nps)
-      .filter((value) => value != null)
+    const tourStudentRows = studentRows.filter((row) => row.tourId === tour.id)
+    const tourTeacherRows = teacherRows.filter((row) => row.tourId === tour.id)
 
     return {
       tourId: tour.id,
       tourName: tour.name,
-      csat: average(csatValues),
-      itp: average(itpValues),
-      nps: average(npsValues),
+      csat: average(tourStudentRows.map((row) => row.enjoyment).filter((value) => value != null)),
+      itp: average(tourStudentRows.map((row) => row.interestInFutureCareer).filter((value) => value != null)),
+      nps: computeNps(tourTeacherRows.map((row) => row.recommendScore).filter((value) => value != null)),
     }
   })
 }
 
-/**
- * One row per fully-completed (reach + student feedback + teacher feedback)
- * tour entry, for the "Completed Schools" table.
- */
-export function computeCompletedRows(schools) {
-  return schools.flatMap((school) =>
-    allTourEntries(school)
-      .filter(({ tour }) => tour.reach && tour.studentFeedback && tour.teacherFeedback)
-      .map(({ classRecord, tour }) => ({
-        id: `${school.udise}-${tour.tourId}-${classRecord.grade}`,
-        school: school.schoolName,
-        district: school.district,
-        tour: tour.tourName,
-        grade: classRecord.grade,
-        month: tour.month,
-        reach: tour.reach.uniqueStudentCount,
-        responses: tour.studentFeedback.respondedCount,
-        avgCsat: tour.studentFeedback.csatAvg,
-        nps: tour.teacherFeedback.nps,
-      })),
-  )
-}
-
-function fieldStatus(entries, hasField) {
-  if (entries.length === 0) return 'Pending'
-  return entries.every(hasField) ? 'Completed' : 'Pending'
+function statusLabel(isDone, hasAnyActivity) {
+  if (isDone) return 'Completed'
+  return hasAnyActivity ? 'In Progress' : 'Pending'
 }
 
 function overallStatusFrom(teacherFb, reachData, studentFb) {
@@ -181,18 +116,19 @@ function overallStatusFrom(teacherFb, reachData, studentFb) {
   return 'In Progress'
 }
 
-/**
- * Flat UDISE/School Name/District/State directory, for the Admin "School
- * Management" list (the source of truth for which UDISEs can log in as
- * teachers).
- */
-export function computeSchoolDirectory(schools) {
-  return schools.map((school) => ({
-    udise: school.udise,
-    schoolName: school.schoolName,
-    district: school.district,
-    state: school.state,
-  }))
+function computeLastActivity(school) {
+  const dates = [
+    ...school.reach.map((reach) => reach.createdAt),
+    ...school.studentFeedback.map((row) => row.createdAt),
+    ...school.teacherFeedback.map((row) => row.createdAt),
+  ]
+    .filter(Boolean)
+    .map((value) => new Date(value))
+    .filter((date) => !Number.isNaN(date.getTime()))
+
+  if (dates.length === 0) return '—'
+  const latest = new Date(Math.max(...dates.map((date) => date.getTime())))
+  return latest.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 /**
@@ -200,11 +136,9 @@ export function computeSchoolDirectory(schools) {
  */
 export function computeRegisteredRows(schools) {
   return schools.map((school) => {
-    const entries = allTourEntries(school).map(({ tour }) => tour)
-
-    const teacherFb = fieldStatus(entries, (tour) => Boolean(tour.teacherFeedback))
-    const reachData = fieldStatus(entries, (tour) => Boolean(tour.reach))
-    const studentFb = fieldStatus(entries, (tour) => Boolean(tour.studentFeedback))
+    const teacherFb = statusLabel(school.status.teacherFeedbackCompleted, school.teacherFeedback.length > 0)
+    const reachData = statusLabel(school.status.reachSubmitted, school.reach.length > 0)
+    const studentFb = statusLabel(school.status.studentFeedbackCompleted, school.studentFeedback.length > 0)
 
     return {
       id: school.udise,
@@ -215,7 +149,81 @@ export function computeRegisteredRows(schools) {
       reachData,
       studentFb,
       overallStatus: overallStatusFrom(teacherFb, reachData, studentFb),
-      lastActivity: school.lastActivityLabel,
+      lastActivity: computeLastActivity(school),
     }
   })
+}
+
+/**
+ * One row per (school, grade, tour) combination that has reach data plus at
+ * least one student and one teacher feedback submission for that tour, for
+ * the "Completed Schools" table.
+ */
+export function computeCompletedRows(schools) {
+  const rows = []
+
+  schools.forEach((school) => {
+    school.reach.forEach((reach) => {
+      reach.tours.forEach((tour) => {
+        const studentRows = school.studentFeedback.filter(
+          (row) => row.grade === reach.grade && row.tourId === tour.tourId,
+        )
+        const teacherRows = school.teacherFeedback.filter((row) => row.tourId === tour.tourId)
+        if (studentRows.length === 0 || teacherRows.length === 0) return
+
+        rows.push({
+          id: `${school.udise}-${tour.tourId}-${reach.grade}`,
+          school: school.schoolName,
+          district: school.district,
+          tour: tour.tourName,
+          grade: reach.grade,
+          month: reach.month,
+          reach: reach.uniqueStudentCount,
+          responses: studentRows.length,
+          avgCsat: average(studentRows.map((row) => row.enjoyment).filter((value) => value != null)) ?? 0,
+          nps: computeNps(teacherRows.map((row) => row.recommendScore).filter((value) => value != null)) ?? 0,
+        })
+      })
+    })
+  })
+
+  return rows
+}
+
+/**
+ * One row per individual feedback submission event (Teacher or Student),
+ * for the "All Submissions" activity log.
+ */
+export function computeSubmissionRows(schools) {
+  const rows = []
+
+  schools.forEach((school) => {
+    school.teacherFeedback.forEach((row) => {
+      rows.push({
+        id: `sub-teacher-${school.udise}-${row.tourId}-${row.createdAt}`,
+        type: 'Teacher',
+        school: school.schoolName,
+        tour: row.tourName,
+        grade: '—',
+        month: row.month,
+        time: row.createdAt,
+        csat: null,
+      })
+    })
+
+    school.studentFeedback.forEach((row) => {
+      rows.push({
+        id: `sub-student-${school.udise}-${row.tourId}-${row.studentDummyId}-${row.createdAt}`,
+        type: 'Student',
+        school: school.schoolName,
+        tour: row.tourName,
+        grade: row.grade,
+        month: row.month,
+        time: row.createdAt,
+        csat: row.enjoyment,
+      })
+    })
+  })
+
+  return rows.sort((a, b) => new Date(a.time) - new Date(b.time))
 }

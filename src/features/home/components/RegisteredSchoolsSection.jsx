@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import Spinner from '../../../components/ui/Spinner'
+import ErrorState from '../../../components/ui/ErrorState'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import DashboardTable from '../../../components/table/DashboardTable'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
@@ -28,7 +29,7 @@ const COLUMNS = [
 ]
 
 export default function RegisteredSchoolsSection() {
-  const { schools, isLoading } = useSchoolRecords()
+  const { schools, isLoading, error, refetch } = useSchoolRecords()
   const rows = useMemo(() => computeRegisteredRows(schools), [schools])
 
   return (
@@ -44,6 +45,8 @@ export default function RegisteredSchoolsSection() {
         <div className="flex justify-center py-16">
           <Spinner className="h-6 w-6 text-slate-400" />
         </div>
+      ) : error ? (
+        <ErrorState message={error} onRetry={refetch} />
       ) : (
         <div className="mt-6">
           <DashboardTable

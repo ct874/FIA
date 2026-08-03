@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import SummaryCard from '../../../components/ui/SummaryCard'
 import Spinner from '../../../components/ui/Spinner'
+import ErrorState from '../../../components/ui/ErrorState'
 import DashboardTable from '../../../components/table/DashboardTable'
-import TypeBadge from '../components/TypeBadge'
+import TypeBadge from '../../../components/ui/TypeBadge'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
 import { getAllSubmissionRows, computeSubmissionsSummary } from '../utils/mergeSubmissions'
 
@@ -27,7 +28,7 @@ const COLUMNS = [
 ]
 
 export default function SubmissionsPage() {
-  const { schools, isLoading } = useSchoolRecords()
+  const { schools, isLoading, error, refetch } = useSchoolRecords()
   const rows = useMemo(() => getAllSubmissionRows(schools), [schools])
   const summary = useMemo(() => computeSubmissionsSummary(rows), [rows])
 
@@ -41,6 +42,8 @@ export default function SubmissionsPage() {
         <div className="flex justify-center py-16">
           <Spinner className="h-6 w-6 text-slate-400" />
         </div>
+      ) : error ? (
+        <ErrorState message={error} onRetry={refetch} />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
