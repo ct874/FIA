@@ -58,14 +58,16 @@ export function computeOverviewSummary(schools, filters = {}) {
     school.teacherFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)),
   )
 
-  const schoolIds = new Set(reachEntries.map((entry) => entry.school.udise))
   const totalReach = reachEntries.reduce((sum, entry) => sum + entry.reach.uniqueStudentCount, 0)
 
   const csatValues = studentRows.map((row) => row.enjoyment).filter((value) => value != null)
   const itpValues = studentRows.map((row) => row.interestInFutureCareer).filter((value) => value != null)
 
   return {
-    schoolsCount: schoolIds.size,
+    // Every registered school, not just ones with matching reach data — the
+    // Super Admin Dashboard's "Total Schools" must mirror the real School
+    // collection count exactly.
+    schoolsCount: filteredSchools.length,
     totalReach,
     studentResponses: studentRows.length,
     teacherResponses: teacherRows.length,
@@ -188,6 +190,43 @@ export function computeCompletedRows(schools) {
   })
 
   return rows
+}
+
+/**
+ * One card per grade found anywhere in the database, aggregated across every
+ * school — e.g. Grade 6 across School A (15 students) + School B (19
+ * students) = one "Grade 6" card with Total Students 34. No grade is
+ * hardcoded; the set of cards is whatever grades currently have reach data.
+ */
+export function computeGradeSummaryCards(schools) {
+  const byGrade = new Map()
+
+  schools.forEach((school) => {
+    school.reach.forEach((reach) => {
+      const entry = byGrade.get(reach.grade) || {
+        grade: reach.grade,
+        totalStudents: 0,
+        totalReach: 0,
+        target: 0,
+        submitted: 0,
+      }
+      entry.totalStudents += reach.uniqueStudentCount
+      entry.totalReach += reach.studentsReached
+      entry.target += reach.target
+      entry.submitted += reach.submittedCount
+      byGrade.set(reach.grade, entry)
+    })
+  })
+
+  return Array.from(byGrade.values())
+    .map((entry) => ({
+      grade: entry.grade,
+      totalStudents: entry.totalStudents,
+      totalReach: entry.totalReach,
+      totalSubmitted: entry.submitted,
+      completionPercentage: entry.target > 0 ? Math.min(100, Math.round((entry.submitted / entry.target) * 100)) : 0,
+    }))
+    .sort((a, b) => Number(a.grade) - Number(b.grade))
 }
 
 /**

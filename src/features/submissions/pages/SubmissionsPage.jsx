@@ -4,8 +4,10 @@ import Spinner from '../../../components/ui/Spinner'
 import ErrorState from '../../../components/ui/ErrorState'
 import DashboardTable from '../../../components/table/DashboardTable'
 import TypeBadge from '../../../components/ui/TypeBadge'
+import GradeSummaryCard from '../components/GradeSummaryCard'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
 import { getAllSubmissionRows, computeSubmissionsSummary } from '../utils/mergeSubmissions'
+import { computeGradeSummaryCards } from '../../../data/schoolRecords.derive'
 
 function formatTime(iso) {
   const date = new Date(iso)
@@ -31,6 +33,7 @@ export default function SubmissionsPage() {
   const { schools, isLoading, error, refetch } = useSchoolRecords()
   const rows = useMemo(() => getAllSubmissionRows(schools), [schools])
   const summary = useMemo(() => computeSubmissionsSummary(rows), [rows])
+  const gradeCards = useMemo(() => computeGradeSummaryCards(schools), [schools])
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -46,11 +49,25 @@ export default function SubmissionsPage() {
         <ErrorState message={error} onRetry={refetch} />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <SummaryCard accent label="Total Student Feedback Submitted" value={summary.totalStudentFeedback} />
             <SummaryCard accent label="Teacher Responses" value={summary.teacherResponses} />
-            <SummaryCard accent label="Grade 6 Feedback" value={summary.grade6Feedback} />
             <SummaryCard accent label="Avg CSAT" value={summary.avgCsat.toFixed(2)} />
+          </div>
+
+          <div className="mt-6">
+            <p className="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              Feedback by Grade — All Schools
+            </p>
+            {gradeCards.length === 0 ? (
+              <p className="text-sm text-slate-400">No grade-wise reach data available yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {gradeCards.map((card) => (
+                  <GradeSummaryCard key={card.grade} card={card} />
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="mt-6 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">

@@ -19,3 +19,9 @@ export const API_BASE_URL =
 
 export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized'
 export const TEACHER_AUTH_UNAUTHORIZED_EVENT = 'teacherAuth:unauthorized'
+
+// Dispatched whenever an admin action changes school/reach/feedback data
+// (upload, delete) — every useSchoolRecords() instance across the app
+// listens for this and refetches immediately, so all dashboard cards/tables
+// stay in sync within the same session without a manual page reload.
+export const SCHOOL_DATA_CHANGED_EVENT = 'schoolData:changed'
