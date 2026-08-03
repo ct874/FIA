@@ -108,6 +108,7 @@ export default function PerSchoolExportCodesTable({ directoryVersion }) {
           data={directory}
           searchKeys={['schoolName', 'udise']}
           searchPlaceholder="Search schools..."
+          emptyMessage={directory.length === 0 ? 'No Schools Registered Yet' : 'No schools match your search.'}
         />
       )}
     </div>

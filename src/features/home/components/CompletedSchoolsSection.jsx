@@ -66,7 +66,9 @@ export default function CompletedSchoolsSection() {
               data={rows}
               searchKeys={['school', 'district']}
               searchPlaceholder="Search by school or district..."
-              emptyMessage="No completed schools match your search."
+              emptyMessage={
+                rows.length === 0 ? 'No Completed Schools Yet' : 'No completed schools match your search.'
+              }
               fluid
             />
           </div>

@@ -54,7 +54,9 @@ export default function RegisteredSchoolsSection() {
             data={rows}
             searchKeys={['school', 'district', 'udise']}
             searchPlaceholder="Search by school, district or UDISE..."
-            emptyMessage="No registered schools match your search."
+            emptyMessage={
+              rows.length === 0 ? 'No Schools Registered Yet' : 'No registered schools match your search.'
+            }
             fluid
           />
         </div>
