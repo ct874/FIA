@@ -55,7 +55,7 @@ model/service/controller/route files under `server/src/` mounted in
 cd server
 cp .env.example .env   # then edit values, especially JWT_SECRET
 npm install
-npm run dev             # http://localhost:5000
+npm run dev             # http://https://fia-bnum.onrender.com
 ```
 
 Make sure MongoDB is running and `MONGO_URI` in `server/.env` points to it.
@@ -74,12 +74,12 @@ same bootstrap manually at any time with `npm run seed:super-admin`.
 From the project root:
 
 ```bash
-cp .env.example .env   # VITE_API_BASE_URL defaults to http://localhost:5000/api
+cp .env.example .env   # VITE_API_BASE_URL defaults to https://fia-bnum.onrender.com/api
 npm install
-npm run dev             # http://localhost:5173
+npm run dev             # http://https://fia-nu.vercel.app/
 ```
 
-Open `http://localhost:5173` — this is the Super Admin login page. After a
+Open `https://fia-nu.vercel.app/` — this is the Super Admin login page. After a
 successful login you are redirected to `/home`, which is protected and
 requires a valid session.
 

@@ -13,7 +13,7 @@ for (const key of requiredVars) {
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT) || 5000,
-  clientOrigins: (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+  clientOrigins: (process.env.CLIENT_ORIGIN || 'https://fia-nu.vercel.app/')
     .split(',')
     .map((origin) => origin.trim()),
   mongoUri: process.env.MONGO_URI,
