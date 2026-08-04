@@ -2,9 +2,11 @@ import { Outlet, useLocation } from 'react-router-dom'
 import TeacherNavbar from './TeacherNavbar'
 import Footer from './Footer'
 import { TeacherStatusProvider } from '../../context/TeacherStatusProvider'
+import { useLanguage } from '../../hooks/useLanguage'
 
 export default function TeacherLayout() {
   const location = useLocation()
+  const { t } = useLanguage()
 
   return (
     <TeacherStatusProvider>
@@ -17,7 +19,7 @@ export default function TeacherLayout() {
           </div>
         </main>
 
-        <Footer label="FIA Teacher Portal" />
+        <Footer label={t('nav.teacherPortalTitle')} />
       </div>
     </TeacherStatusProvider>
   )

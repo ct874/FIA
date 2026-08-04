@@ -4,41 +4,53 @@ import ErrorState from '../../../components/ui/ErrorState'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import DashboardTable from '../../../components/table/DashboardTable'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
+import { useLanguage } from '../../../hooks/useLanguage'
 import { computeRegisteredRows } from '../../../data/schoolRecords.derive'
-
-const COLUMNS = [
-  {
-    key: 'school',
-    label: 'School',
-    sortable: true,
-    wrap: true,
-    render: (row) => <span className="font-medium text-slate-900">{row.school}</span>,
-  },
-  { key: 'udise', label: 'UDISE' },
-  { key: 'district', label: 'District', sortable: true },
-  { key: 'teacherFb', label: 'Teacher FB', render: (row) => <StatusBadge status={row.teacherFb} /> },
-  { key: 'reachData', label: 'Reach Data', render: (row) => <StatusBadge status={row.reachData} /> },
-  { key: 'studentFb', label: 'Student FB', render: (row) => <StatusBadge status={row.studentFb} /> },
-  {
-    key: 'overallStatus',
-    label: 'Overall Status',
-    sortable: true,
-    render: (row) => <StatusBadge status={row.overallStatus} />,
-  },
-  { key: 'lastActivity', label: 'Last Activity' },
-]
 
 export default function RegisteredSchoolsSection() {
   const { schools, isLoading, error, refetch } = useSchoolRecords()
+  const { t } = useLanguage()
   const rows = useMemo(() => computeRegisteredRows(schools), [schools])
+
+  const columns = [
+    {
+      key: 'school',
+      label: t('home.registered.columns.school'),
+      sortable: true,
+      wrap: true,
+      render: (row) => <span className="font-medium text-slate-900">{row.school}</span>,
+    },
+    { key: 'udise', label: t('home.registered.columns.udise') },
+    { key: 'district', label: t('home.registered.columns.district'), sortable: true },
+    {
+      key: 'teacherFb',
+      label: t('home.registered.columns.teacherFb'),
+      render: (row) => <StatusBadge status={row.teacherFb} />,
+    },
+    {
+      key: 'reachData',
+      label: t('home.registered.columns.reachData'),
+      render: (row) => <StatusBadge status={row.reachData} />,
+    },
+    {
+      key: 'studentFb',
+      label: t('home.registered.columns.studentFb'),
+      render: (row) => <StatusBadge status={row.studentFb} />,
+    },
+    {
+      key: 'overallStatus',
+      label: t('home.registered.columns.overallStatus'),
+      sortable: true,
+      render: (row) => <StatusBadge status={row.overallStatus} />,
+    },
+    { key: 'lastActivity', label: t('home.registered.columns.lastActivity') },
+  ]
 
   return (
     <section className="mt-8 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
       <div>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900">Registered Schools</h2>
-        <p className="mt-1.5 max-w-2xl text-sm text-slate-500">
-          List of all registered schools and their current submission progress.
-        </p>
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900">{t('home.registered.title')}</h2>
+        <p className="mt-1.5 max-w-2xl text-sm text-slate-500">{t('home.registered.description')}</p>
       </div>
 
       {isLoading ? (
@@ -50,13 +62,11 @@ export default function RegisteredSchoolsSection() {
       ) : (
         <div className="mt-6">
           <DashboardTable
-            columns={COLUMNS}
+            columns={columns}
             data={rows}
             searchKeys={['school', 'district', 'udise']}
-            searchPlaceholder="Search by school, district or UDISE..."
-            emptyMessage={
-              rows.length === 0 ? 'No Schools Registered Yet' : 'No registered schools match your search.'
-            }
+            searchPlaceholder={t('home.registered.searchPlaceholder')}
+            emptyMessage={rows.length === 0 ? t('home.registered.emptyAll') : t('home.registered.emptySearch')}
             fluid
           />
         </div>

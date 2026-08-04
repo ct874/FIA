@@ -7,17 +7,18 @@ import WorkflowStepper from '../../../components/ui/WorkflowStepper'
 import TourFeedbackFields from '../components/TourFeedbackFields'
 import { useTeacherStatus } from '../../../hooks/useTeacherStatus'
 import { useToast } from '../../../hooks/useToast'
+import { useLanguage } from '../../../hooks/useLanguage'
 import { fetchTeacherFeedback, submitTeacherFeedback } from '../../../api/teacherFeedback.api'
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { TEACHER_ROUTES } from '../../../utils/constants'
 
-function npsLabel(score) {
-  if (score >= 9) return 'Promoter'
-  if (score >= 7) return 'Passive'
-  return 'Detractor'
+function npsLabelKey(score) {
+  if (score >= 9) return 'teacherFeedback.nps.promoter'
+  if (score >= 7) return 'teacherFeedback.nps.passive'
+  return 'teacherFeedback.nps.detractor'
 }
 
-function SubmittedSummary({ submissions, status }) {
+function SubmittedSummary({ submissions, status, t }) {
   const navigate = useNavigate()
   const first = submissions[0]
 
@@ -29,43 +30,41 @@ function SubmittedSummary({ submissions, status }) {
             <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <h2 className="mt-4 text-lg font-semibold sm:text-xl">Your Teacher Feedback</h2>
-        <p className="mt-1 text-sm text-slate-300">
-          You've already submitted your feedback for this school. Here's a summary of your responses (view only).
-        </p>
+        <h2 className="mt-4 text-lg font-semibold sm:text-xl">{t('teacherFeedback.submittedTitle')}</h2>
+        <p className="mt-1 text-sm text-slate-300">{t('teacherFeedback.submittedSubtitle')}</p>
 
         {first && (
           <div className="mt-6 rounded-2xl bg-white/5 p-5 text-left text-sm">
             <p>
-              <span className="font-semibold text-amber-300">Submitted by:</span> {first.submittedBy}
+              <span className="font-semibold text-amber-300">{t('teacherFeedback.submittedBy')}</span> {first.submittedBy}
             </p>
             {first.contactNumber && (
               <p className="mt-1">
-                <span className="font-semibold text-amber-300">Contact:</span> {first.contactNumber}
+                <span className="font-semibold text-amber-300">{t('teacherFeedback.contact')}</span> {first.contactNumber}
               </p>
             )}
             <p className="mt-1">
-              <span className="font-semibold text-amber-300">Month:</span> {first.month}
+              <span className="font-semibold text-amber-300">{t('teacherFeedback.month')}</span> {first.month}
             </p>
           </div>
         )}
 
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
           <Button className="w-auto! px-6" onClick={() => navigate(TEACHER_ROUTES.REACH_DATA)}>
-            Go to Student Reach →
+            {t('teacherFeedback.goToReach')}
           </Button>
           <Button
             className="w-auto! bg-white/10 px-6 hover:bg-white/20"
             disabled={!status.reachSubmitted}
             onClick={() => navigate(TEACHER_ROUTES.STUDENT_FEEDBACK)}
           >
-            Go to Student Feedback →
+            {t('teacherFeedback.goToStudentFeedback')}
           </Button>
         </div>
       </div>
 
       <p className="mt-8 mb-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">
-        Your Submitted Responses
+        {t('teacherFeedback.yourResponses')}
       </p>
       <div className="space-y-4">
         {submissions.map((submission) => (
@@ -77,31 +76,31 @@ function SubmittedSummary({ submissions, status }) {
 
             <dl className="mt-3 divide-y divide-slate-100 text-sm">
               <div className="flex items-center justify-between py-2">
-                <dt className="text-slate-500">How likely to recommend to other teachers? (0-10)</dt>
+                <dt className="text-slate-500">{t('teacherFeedback.recommendQuestion')}</dt>
                 <dd className="font-semibold text-slate-900">
                   {submission.recommendScore}{' '}
                   <span className="text-xs font-normal text-slate-400">
-                    {npsLabel(submission.recommendScore)}
+                    {t(npsLabelKey(submission.recommendScore))}
                   </span>
                 </dd>
               </div>
               <div className="flex items-center justify-between py-2">
-                <dt className="text-slate-500">Satisfaction with resources provided (1-5)</dt>
+                <dt className="text-slate-500">{t('teacherFeedback.satisfactionQuestion')}</dt>
                 <dd className="font-semibold text-slate-900">{submission.satisfactionResources}/5</dd>
               </div>
               <div className="flex items-center justify-between py-2">
-                <dt className="text-slate-500">Ease of integrating into lesson plan (1-5)</dt>
+                <dt className="text-slate-500">{t('teacherFeedback.easeQuestion')}</dt>
                 <dd className="font-semibold text-slate-900">{submission.easeIntegration}/5</dd>
               </div>
               {submission.biggestBenefit && (
                 <div className="py-2">
-                  <dt className="text-slate-500">Biggest benefit for students:</dt>
+                  <dt className="text-slate-500">{t('teacherFeedback.biggestBenefit')}</dt>
                   <dd className="mt-1 text-slate-700 italic">"{submission.biggestBenefit}"</dd>
                 </div>
               )}
               {submission.improvements && (
                 <div className="py-2">
-                  <dt className="text-slate-500">Suggestions for improvement:</dt>
+                  <dt className="text-slate-500">{t('teacherFeedback.improvements')}</dt>
                   <dd className="mt-1 text-slate-700 italic">"{submission.improvements}"</dd>
                 </div>
               )}
@@ -115,6 +114,7 @@ function SubmittedSummary({ submissions, status }) {
 
 export default function TeacherFeedbackPage() {
   const toast = useToast()
+  const { t } = useLanguage()
   const { status, meta, refetchStatus } = useTeacherStatus()
 
   const [submissions, setSubmissions] = useState([])
@@ -133,7 +133,7 @@ export default function TeacherFeedbackPage() {
         const { data } = await fetchTeacherFeedback()
         if (isMounted) setSubmissions(data.data.submissions)
       } catch (error) {
-        if (isMounted) toast.error(getApiErrorMessage(error, 'Could not load teacher feedback.'))
+        if (isMounted) toast.error(getApiErrorMessage(error, t('teacherFeedback.couldNotLoad')))
       } finally {
         if (isMounted) setIsLoading(false)
       }
@@ -150,17 +150,17 @@ export default function TeacherFeedbackPage() {
 
   const validate = () => {
     const nextErrors = { tours: {} }
-    if (!submittedBy.trim()) nextErrors.submittedBy = 'Your name is required.'
+    if (!submittedBy.trim()) nextErrors.submittedBy = t('teacherFeedback.nameRequired')
 
     meta.tours.forEach((tour) => {
       const value = answers[tour.tourId] || {}
       const tourErrors = {}
-      if (!value.language) tourErrors.language = 'Required'
+      if (!value.language) tourErrors.language = t('teacherFeedback.required')
       if (value.recommendScore === undefined || value.recommendScore === null) {
-        tourErrors.recommendScore = 'Required'
+        tourErrors.recommendScore = t('teacherFeedback.required')
       }
-      if (!value.satisfactionResources) tourErrors.satisfactionResources = 'Required'
-      if (!value.easeIntegration) tourErrors.easeIntegration = 'Required'
+      if (!value.satisfactionResources) tourErrors.satisfactionResources = t('teacherFeedback.required')
+      if (!value.easeIntegration) tourErrors.easeIntegration = t('teacherFeedback.required')
       if (Object.keys(tourErrors).length > 0) nextErrors.tours[tour.tourId] = tourErrors
     })
 
@@ -183,10 +183,10 @@ export default function TeacherFeedbackPage() {
       }
       const { data } = await submitTeacherFeedback(payload)
       setSubmissions(data.data.submissions)
-      toast.success('Feedback Submitted Successfully')
+      toast.success(t('teacherFeedback.submitSuccess'))
       await refetchStatus()
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Could not submit feedback.'))
+      toast.error(getApiErrorMessage(error, t('teacherFeedback.couldNotSubmit')))
     } finally {
       setIsSubmitting(false)
     }
@@ -197,7 +197,7 @@ export default function TeacherFeedbackPage() {
       <WorkflowStepper currentStep={1} completedSteps={status.teacherFeedbackCompleted ? [1] : []} />
 
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Teacher Feedback</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{t('teacherFeedback.title')}</h1>
       </div>
 
       {isLoading ? (
@@ -206,7 +206,7 @@ export default function TeacherFeedbackPage() {
           <Skeleton className="h-32" />
         </div>
       ) : alreadySubmitted ? (
-        <SubmittedSummary submissions={submissions} status={status} />
+        <SubmittedSummary submissions={submissions} status={status} t={t} />
       ) : (
         <form
           onSubmit={handleSubmit}
@@ -216,16 +216,16 @@ export default function TeacherFeedbackPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextInput
               id="submittedBy"
-              label="Your Name"
-              placeholder="e.g. Pragya"
+              label={t('teacherFeedback.yourNameLabel')}
+              placeholder={t('teacherFeedback.yourNamePlaceholder')}
               value={submittedBy}
               onChange={(event) => setSubmittedBy(event.target.value)}
               error={errors.submittedBy}
             />
             <TextInput
               id="contactNumber"
-              label="Contact Number (optional)"
-              placeholder="e.g. 9950144083"
+              label={t('teacherFeedback.contactNumberLabel')}
+              placeholder={t('teacherFeedback.contactNumberPlaceholder')}
               value={contactNumber}
               onChange={(event) => setContactNumber(event.target.value)}
             />
@@ -242,7 +242,7 @@ export default function TeacherFeedbackPage() {
           ))}
 
           <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
-            {isSubmitting ? 'Submitting…' : 'Submit Feedback'}
+            {isSubmitting ? t('teacherFeedback.submitting') : t('teacherFeedback.submit')}
           </Button>
         </form>
       )}

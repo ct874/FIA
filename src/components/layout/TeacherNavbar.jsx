@@ -1,40 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import FiaLogo from '../branding/FiaLogo'
+import LanguageSwitcher from '../ui/LanguageSwitcher'
 import { useTeacherAuth } from '../../hooks/useTeacherAuth'
 import { useTeacherStatus } from '../../hooks/useTeacherStatus'
+import { useLanguage } from '../../hooks/useLanguage'
 import { TEACHER_ROUTES } from '../../utils/constants'
-
-const WORKFLOW_STEPS = [
-  {
-    key: 'feedback',
-    label: 'Teacher Feedback',
-    to: TEACHER_ROUTES.FEEDBACK,
-    isUnlocked: () => true,
-    isCompleted: (status) => status.teacherFeedbackCompleted,
-  },
-  {
-    key: 'reach',
-    label: 'Student Reach',
-    to: TEACHER_ROUTES.REACH_DATA,
-    isUnlocked: (status) => status.teacherFeedbackCompleted,
-    isCompleted: (status) => status.reachSubmitted,
-  },
-  {
-    key: 'studentFeedback',
-    label: 'Student Feedback',
-    to: TEACHER_ROUTES.STUDENT_FEEDBACK,
-    isUnlocked: (status) => status.reachSubmitted,
-    isCompleted: (status) => status.studentFeedbackCompleted,
-  },
-  {
-    key: 'responses',
-    label: 'All Responses',
-    to: TEACHER_ROUTES.RESPONSES,
-    isUnlocked: (status) => status.studentFeedbackCompleted,
-    isCompleted: () => false,
-  },
-]
 
 function CheckIcon({ className = 'h-3.5 w-3.5' }) {
   return (
@@ -86,15 +57,15 @@ function navLinkClassName({ isActive }) {
   }`
 }
 
-function DashboardTab({ onClick }) {
+function DashboardTab({ onClick, label }) {
   return (
     <NavLink to={TEACHER_ROUTES.DASHBOARD} onClick={onClick} className={navLinkClassName}>
-      Dashboard
+      {label}
     </NavLink>
   )
 }
 
-function WorkflowTab({ step, status, onClick }) {
+function WorkflowTab({ step, status, onClick, completePreviousStepLabel }) {
   const unlocked = step.isUnlocked(status)
   const completed = step.isCompleted(status)
 
@@ -104,13 +75,13 @@ function WorkflowTab({ step, status, onClick }) {
         role="link"
         aria-disabled="true"
         tabIndex={-1}
-        title="Complete previous step first"
+        title={completePreviousStepLabel}
         className="group relative inline-flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium whitespace-nowrap text-slate-400 opacity-60 lg:px-4"
       >
         <LockIcon className="h-3.5 w-3.5 text-amber-500" />
         {step.label}
         <span className="pointer-events-none absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
-          Complete previous step first
+          {completePreviousStepLabel}
         </span>
       </span>
     )
@@ -130,7 +101,7 @@ function WorkflowTab({ step, status, onClick }) {
   )
 }
 
-function LogoutButton({ className = '', onClick }) {
+function LogoutButton({ className = '', onClick, label }) {
   return (
     <button
       type="button"
@@ -142,7 +113,7 @@ function LogoutButton({ className = '', onClick }) {
         ${className}`}
     >
       <LogoutIcon />
-      <span>Logout</span>
+      <span>{label}</span>
     </button>
   )
 }
@@ -151,7 +122,32 @@ export default function TeacherNavbar() {
   const navigate = useNavigate()
   const { teacher, logout } = useTeacherAuth()
   const { status } = useTeacherStatus()
+  const { t } = useLanguage()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+
+  const workflowSteps = [
+    {
+      key: 'feedback',
+      label: t('nav.teacherFeedback'),
+      to: TEACHER_ROUTES.FEEDBACK,
+      isUnlocked: () => true,
+      isCompleted: (s) => s.teacherFeedbackCompleted,
+    },
+    {
+      key: 'reach',
+      label: t('nav.studentReach'),
+      to: TEACHER_ROUTES.REACH_DATA,
+      isUnlocked: (s) => s.teacherFeedbackCompleted,
+      isCompleted: (s) => s.reachSubmitted,
+    },
+    {
+      key: 'studentFeedback',
+      label: t('nav.studentFeedback'),
+      to: TEACHER_ROUTES.STUDENT_FEEDBACK,
+      isUnlocked: (s) => s.reachSubmitted,
+      isCompleted: (s) => s.studentFeedbackCompleted,
+    },
+  ]
 
   useEffect(() => {
     document.body.style.overflow = isDrawerOpen ? 'hidden' : ''
@@ -175,27 +171,33 @@ export default function TeacherNavbar() {
           <Link to={TEACHER_ROUTES.DASHBOARD} className="flex items-center gap-3">
             <FiaLogo className="h-9 w-9" />
             <div className="hidden sm:block">
-              <p className="text-sm font-semibold tracking-tight text-slate-900">FIA Teacher Portal</p>
+              <p className="text-sm font-semibold tracking-tight text-slate-900">{t('nav.teacherPortalTitle')}</p>
               {teacher && <p className="text-xs text-slate-400">{teacher.schoolName}</p>}
             </div>
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex lg:gap-2">
-            <DashboardTab />
-            {WORKFLOW_STEPS.map((step) => (
-              <WorkflowTab key={step.key} step={step} status={status} />
+            <DashboardTab label={t('nav.dashboard')} />
+            {workflowSteps.map((step) => (
+              <WorkflowTab
+                key={step.key}
+                step={step}
+                status={status}
+                completePreviousStepLabel={t('nav.completePreviousStep')}
+              />
             ))}
           </nav>
 
-          <div className="hidden md:block">
-            <LogoutButton onClick={handleLogout} />
+          <div className="hidden items-center gap-3 md:flex">
+            <LanguageSwitcher />
+            <LogoutButton onClick={handleLogout} label={t('nav.logout')} />
           </div>
 
           <button
             type="button"
             onClick={() => setIsDrawerOpen(true)}
             className="inline-flex items-center justify-center rounded-xl p-2 text-slate-600 transition-colors duration-200 hover:bg-slate-100 md:hidden"
-            aria-label="Open menu"
+            aria-label={t('nav.openMenu')}
           >
             <MenuIcon />
           </button>
@@ -213,32 +215,39 @@ export default function TeacherNavbar() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Navigation menu"
+        aria-label={t('common.navigationMenu')}
         className={`fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white shadow-2xl shadow-slate-900/10 transition-transform duration-300 ease-out md:hidden ${
           isDrawerOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
-          <span className="text-sm font-semibold text-slate-900">Menu</span>
+          <span className="text-sm font-semibold text-slate-900">{t('nav.menu')}</span>
           <button
             type="button"
             onClick={closeDrawer}
             className="inline-flex items-center justify-center rounded-xl p-2 text-slate-500 transition-colors duration-200 hover:bg-slate-100"
-            aria-label="Close menu"
+            aria-label={t('nav.closeMenu')}
           >
             <CloseIcon />
           </button>
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 p-4">
-          <DashboardTab onClick={closeDrawer} />
-          {WORKFLOW_STEPS.map((step) => (
-            <WorkflowTab key={step.key} step={step} status={status} onClick={closeDrawer} />
+          <DashboardTab onClick={closeDrawer} label={t('nav.dashboard')} />
+          {workflowSteps.map((step) => (
+            <WorkflowTab
+              key={step.key}
+              step={step}
+              status={status}
+              onClick={closeDrawer}
+              completePreviousStepLabel={t('nav.completePreviousStep')}
+            />
           ))}
         </nav>
 
-        <div className="border-t border-slate-200 p-4">
-          <LogoutButton onClick={handleLogout} className="w-full" />
+        <div className="flex flex-col gap-3 border-t border-slate-200 p-4">
+          <LanguageSwitcher className="w-full justify-center" />
+          <LogoutButton onClick={handleLogout} label={t('nav.logout')} className="w-full" />
         </div>
       </div>
     </>

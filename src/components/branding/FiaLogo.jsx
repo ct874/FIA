@@ -1,9 +1,13 @@
+import { useLanguage } from '../../hooks/useLanguage'
+
 export default function FiaLogo({ className = 'h-14 w-14' }) {
+  const { t } = useLanguage()
+
   return (
     <div
       className={`flex items-center justify-center rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 font-heading text-white shadow-lg shadow-slate-900/20 ${className}`}
       role="img"
-      aria-label="FIA logo"
+      aria-label={t('common.fiaLogo')}
     >
       <svg viewBox="0 0 24 24" fill="none" className="h-2/3 w-2/3">
         <path

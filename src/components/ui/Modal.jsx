@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useLanguage } from '../../hooks/useLanguage'
 
 const SIZE_CLASSES = {
   sm: 'max-w-md',
@@ -24,6 +25,8 @@ export default function Modal({
   showCloseButton = true,
   children,
 }) {
+  const { t } = useLanguage()
+
   useEffect(() => {
     if (!isOpen) return undefined
 
@@ -64,7 +67,7 @@ export default function Modal({
             type="button"
             onClick={onClose}
             className="absolute top-4 right-4 z-10 inline-flex items-center justify-center rounded-xl p-1.5 text-slate-400 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             <CloseIcon />
           </button>

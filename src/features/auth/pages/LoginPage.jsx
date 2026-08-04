@@ -1,7 +1,10 @@
 import FiaLogo from '../../../components/branding/FiaLogo'
 import LoginForm from '../components/LoginForm'
+import { useLanguage } from '../../../hooks/useLanguage'
 
 export default function LoginPage() {
+  const { t } = useLanguage()
+
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-12">
       <div
@@ -18,11 +21,9 @@ export default function LoginPage() {
           <div className="flex flex-col items-center text-center">
             <FiaLogo />
             <h1 className="mt-6 text-2xl font-semibold tracking-tight text-slate-900">
-              Super Admin Portal
+              {t('auth.title')}
             </h1>
-            <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
-              Sign in with your administrator credentials to manage the FIA platform.
-            </p>
+            <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">{t('auth.subtitle')}</p>
           </div>
 
           <div className="mt-8">
@@ -30,9 +31,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
-          Foundation for Innovation &amp; Action &middot; Authorized personnel only
-        </p>
+        <p className="mt-6 text-center text-xs text-slate-400">{t('auth.footerNote')}</p>
       </div>
     </div>
   )

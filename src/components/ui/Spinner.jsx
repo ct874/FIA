@@ -1,11 +1,15 @@
+import { useLanguage } from '../../hooks/useLanguage'
+
 export default function Spinner({ className = 'h-5 w-5' }) {
+  const { t } = useLanguage()
+
   return (
     <svg
       className={`animate-spin text-current ${className}`}
       viewBox="0 0 24 24"
       fill="none"
       role="status"
-      aria-label="Loading"
+      aria-label={t('common.loadingAriaLabel')}
     >
       <circle
         className="opacity-25"

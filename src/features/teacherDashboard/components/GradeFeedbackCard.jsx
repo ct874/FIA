@@ -1,3 +1,5 @@
+import { useLanguage } from '../../../hooks/useLanguage'
+
 function CheckIcon({ className = 'h-4 w-4' }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
@@ -16,6 +18,7 @@ function StatCell({ label, value }) {
 }
 
 export default function GradeFeedbackCard({ grade, onStart }) {
+  const { t } = useLanguage()
   const remaining = Math.max(0, grade.target - grade.submittedCount)
   const progressPercent =
     grade.target === 0 ? 100 : Math.min(100, Math.round((grade.submittedCount / grade.target) * 100))
@@ -28,7 +31,9 @@ export default function GradeFeedbackCard({ grade, onStart }) {
     >
       <div className={`px-5 py-4 text-white ${grade.targetMet ? 'bg-green-600' : 'bg-slate-900'}`}>
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Grade {grade.grade}</h3>
+          <h3 className="text-lg font-semibold">
+            {t('reachData.gradeLabel')} {grade.grade}
+          </h3>
           {grade.targetMet && (
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
               <CheckIcon className="h-3.5 w-3.5" />
@@ -36,16 +41,16 @@ export default function GradeFeedbackCard({ grade, onStart }) {
           )}
         </div>
         <p className="mt-0.5 text-xs opacity-80">
-          {grade.studentsReached} students &middot; {grade.tours.length} tour(s)
+          {t('gradeFeedbackCard.studentsAndTours', { students: grade.studentsReached, tours: grade.tours.length })}
         </p>
       </div>
 
       <div className="bg-white p-5">
         <div className="grid grid-cols-2 gap-y-3">
-          <StatCell label="Required" value={grade.target} />
-          <StatCell label="Completed" value={grade.submittedCount} />
-          <StatCell label="Remaining" value={remaining} />
-          <StatCell label="Progress" value={`${progressPercent}%`} />
+          <StatCell label={t('gradeFeedbackCard.required')} value={grade.target} />
+          <StatCell label={t('gradeFeedbackCard.completed')} value={grade.submittedCount} />
+          <StatCell label={t('gradeFeedbackCard.remaining')} value={remaining} />
+          <StatCell label={t('gradeFeedbackCard.progress')} value={`${progressPercent}%`} />
         </div>
 
         <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
@@ -58,14 +63,16 @@ export default function GradeFeedbackCard({ grade, onStart }) {
         </div>
 
         {grade.targetMet ? (
-          <p className="mt-3 text-sm font-medium text-green-700">✓ Feedback target met. Thank you!</p>
+          <p className="mt-3 text-sm font-medium text-green-700">{t('gradeFeedbackCard.targetMetNote')}</p>
         ) : (
           <button
             type="button"
             onClick={() => onStart(grade)}
             className="mt-4 w-full rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-amber-600 hover:shadow-md hover:shadow-amber-500/25"
           >
-            {grade.submittedCount > 0 ? `Continue Feedback (${remaining} left) →` : 'Start Feedback →'}
+            {grade.submittedCount > 0
+              ? t('gradeFeedbackCard.continueFeedback', { count: remaining })
+              : t('gradeFeedbackCard.startFeedback')}
           </button>
         )}
       </div>

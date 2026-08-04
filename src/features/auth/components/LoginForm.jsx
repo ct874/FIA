@@ -5,6 +5,7 @@ import PasswordInput from '../../../components/ui/PasswordInput'
 import Checkbox from '../../../components/ui/Checkbox'
 import Button from '../../../components/ui/Button'
 import { useAuth } from '../../../hooks/useAuth'
+import { useLanguage } from '../../../hooks/useLanguage'
 import { validateLoginForm } from '../utils/validateLoginForm'
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { ROUTES } from '../../../utils/constants'
@@ -14,6 +15,7 @@ const INITIAL_FORM = { loginId: '', password: '' }
 export default function LoginForm() {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const { t } = useLanguage()
 
   const [form, setForm] = useState(INITIAL_FORM)
   const [rememberMe, setRememberMe] = useState(false)
@@ -30,7 +32,7 @@ export default function LoginForm() {
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    const errors = validateLoginForm(form)
+    const errors = validateLoginForm(form, t)
     setFieldErrors(errors)
     if (Object.keys(errors).length > 0) return
 
@@ -41,7 +43,7 @@ export default function LoginForm() {
       await login({ ...form, rememberMe })
       navigate(ROUTES.HOME, { replace: true })
     } catch (error) {
-      setFormError(getApiErrorMessage(error, 'Unable to sign in. Please check your credentials and try again.'))
+      setFormError(getApiErrorMessage(error, t('auth.signInError')))
     } finally {
       setIsSubmitting(false)
     }
@@ -60,10 +62,10 @@ export default function LoginForm() {
 
       <TextInput
         id="loginId"
-        label="Login ID"
+        label={t('auth.loginIdLabel')}
         type="text"
         autoComplete="username"
-        placeholder="Enter your login ID"
+        placeholder={t('auth.loginIdPlaceholder')}
         value={form.loginId}
         onChange={handleChange('loginId')}
         error={fieldErrors.loginId}
@@ -71,9 +73,9 @@ export default function LoginForm() {
 
       <PasswordInput
         id="password"
-        label="Password"
+        label={t('auth.passwordLabel')}
         autoComplete="current-password"
-        placeholder="Enter your password"
+        placeholder={t('auth.passwordPlaceholder')}
         value={form.password}
         onChange={handleChange('password')}
         error={fieldErrors.password}
@@ -82,7 +84,7 @@ export default function LoginForm() {
       <div className="flex items-center justify-between">
         <Checkbox
           id="rememberMe"
-          label="Remember me"
+          label={t('auth.rememberMe')}
           checked={rememberMe}
           onChange={(event) => setRememberMe(event.target.checked)}
         />
@@ -90,12 +92,12 @@ export default function LoginForm() {
           type="button"
           className="text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
         >
-          Forgot password?
+          {t('auth.forgotPassword')}
         </button>
       </div>
 
       <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
-        {isSubmitting ? 'Signing in…' : 'Sign in'}
+        {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
       </Button>
     </form>
   )

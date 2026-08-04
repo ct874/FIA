@@ -1,3 +1,5 @@
+import { useLanguage } from '../../../hooks/useLanguage'
+
 function StatCell({ label, value }) {
   return (
     <div>
@@ -8,15 +10,20 @@ function StatCell({ label, value }) {
 }
 
 export default function GradeSummaryCard({ card }) {
+  const { t } = useLanguage()
+
   return (
     <div className="animate-fade-in-up rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-900/5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-900/10">
-      <p className="text-sm font-semibold text-slate-900">Grade {card.grade} Feedback</p>
+      <p className="text-sm font-semibold text-slate-900">{t('submissions.gradeCard.title', { grade: card.grade })}</p>
 
       <div className="mt-4 grid grid-cols-2 gap-y-3">
-        <StatCell label="Total Students" value={card.totalStudents.toLocaleString()} />
-        <StatCell label="Feedback Submitted" value={card.totalSubmitted.toLocaleString()} />
-        <StatCell label="Total Reach" value={card.totalReach.toLocaleString()} />
-        <StatCell label="Completion" value={`${card.completionPercentage}%`} />
+        <StatCell label={t('submissions.gradeCard.totalStudents')} value={card.totalStudents.toLocaleString()} />
+        <StatCell
+          label={t('submissions.gradeCard.feedbackSubmitted')}
+          value={card.totalSubmitted.toLocaleString()}
+        />
+        <StatCell label={t('submissions.gradeCard.totalReach')} value={card.totalReach.toLocaleString()} />
+        <StatCell label={t('submissions.gradeCard.completion')} value={`${card.completionPercentage}%`} />
       </div>
 
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">

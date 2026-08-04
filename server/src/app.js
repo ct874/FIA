@@ -11,7 +11,14 @@ const app = express()
 app.use(helmet())
 app.use(
   cors({
-    origin: env.clientOrigins,    
+    origin: (origin, callback) => {
+      // No Origin header (Postman, curl, server-to-server calls) — allow.
+      if (!origin || env.clientOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error(`Origin ${origin} is not allowed by CORS`))
+      }
+    },
   }),
 )
 app.use(express.json())

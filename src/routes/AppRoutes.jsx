@@ -14,7 +14,6 @@ import TeacherDashboardPage from '../features/teacherDashboard/pages/TeacherDash
 import ReachDataPage from '../features/teacherDashboard/pages/ReachDataPage'
 import TeacherFeedbackPage from '../features/teacherDashboard/pages/TeacherFeedbackPage'
 import StudentFeedbackPage from '../features/teacherDashboard/pages/StudentFeedbackPage'
-import AllResponsesPage from '../features/teacherDashboard/pages/AllResponsesPage'
 import { ROUTES, TEACHER_ROUTES } from '../utils/constants'
 
 export default function AppRoutes() {
@@ -42,7 +41,6 @@ export default function AppRoutes() {
           <Route path={TEACHER_ROUTES.FEEDBACK} element={<TeacherFeedbackPage />} />
           <Route path={TEACHER_ROUTES.REACH_DATA} element={<ReachDataPage />} />
           <Route path={TEACHER_ROUTES.STUDENT_FEEDBACK} element={<StudentFeedbackPage />} />
-          <Route path={TEACHER_ROUTES.RESPONSES} element={<AllResponsesPage />} />
         </Route>
       </Route>
 

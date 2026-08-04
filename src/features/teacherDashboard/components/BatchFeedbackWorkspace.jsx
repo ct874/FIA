@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react'
 import Button from '../../../components/ui/Button'
+import { useLanguage } from '../../../hooks/useLanguage'
 
+// These 5 questions are the fixed survey instrument shown to students — they
+// stay in Hindi regardless of the admin/teacher UI language toggle, since
+// they're the program's actual data-collection form, not switchable UI text.
 const QUESTIONS = [
   { key: 'enjoyment', text: 'आपको यह करियर टूर कितना पसंद आया?', type: 'rating' },
   { key: 'overallExperience', text: 'टूर का समग्र अनुभव कैसा रहा?', type: 'rating' },
@@ -41,14 +45,14 @@ function RatingRow({ label, value, onChange }) {
   )
 }
 
-function YesNoRow({ label, value, onChange }) {
+function YesNoRow({ label, value, onChange, yesLabel, noLabel }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 py-2.5">
       <span className="text-sm font-medium text-slate-600">{label}</span>
       <div className="inline-flex overflow-hidden rounded-lg border border-slate-200">
         {[
-          { label: 'Yes', val: true },
-          { label: 'No', val: false },
+          { label: yesLabel, val: true },
+          { label: noLabel, val: false },
         ].map((option) => (
           <button
             key={option.label}
@@ -71,6 +75,7 @@ function isAnswered(value) {
 }
 
 export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSubmitting }) {
+  const { t } = useLanguage()
   const remaining = Math.max(0, grade.target - grade.submittedCount)
 
   const [responses, setResponses] = useState(() =>
@@ -119,21 +124,25 @@ export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSu
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors duration-150 hover:text-slate-900"
       >
         <BackIcon />
-        Back to Grades
+        {t('studentFeedback.backToGrades')}
       </button>
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">Student Feedback</p>
-          <h2 className="mt-0.5 text-xl font-semibold text-slate-900">Grade {grade.grade}</h2>
+          <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">{t('studentFeedback.title')}</p>
+          <h2 className="mt-0.5 text-xl font-semibold text-slate-900">
+            {t('studentFeedback.gradeHeading', { grade: grade.grade })}
+          </h2>
         </div>
         <span className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
-          {remaining} student{remaining === 1 ? '' : 's'} remaining
+          {remaining === 1
+            ? t('studentFeedback.studentsRemaining', { count: remaining })
+            : t('studentFeedback.studentsRemainingPlural', { count: remaining })}
         </span>
       </div>
 
       {remaining === 0 ? (
-        <p className="text-sm text-slate-500">This grade has already met its feedback target.</p>
+        <p className="text-sm text-slate-500">{t('studentFeedback.targetMet')}</p>
       ) : (
         <>
           <div className="space-y-5">
@@ -150,16 +159,18 @@ export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSu
                     question.type === 'rating' ? (
                       <RatingRow
                         key={studentIndex}
-                        label={`Student ${studentIndex + 1}`}
+                        label={t('studentFeedback.studentLabel', { index: studentIndex + 1 })}
                         value={responses[studentIndex][question.key]}
                         onChange={setAnswer(studentIndex, question.key)}
                       />
                     ) : (
                       <YesNoRow
                         key={studentIndex}
-                        label={`Student ${studentIndex + 1}`}
+                        label={t('studentFeedback.studentLabel', { index: studentIndex + 1 })}
                         value={responses[studentIndex][question.key]}
                         onChange={setAnswer(studentIndex, question.key)}
+                        yesLabel={t('studentFeedback.yesLabel')}
+                        noLabel={t('studentFeedback.noLabel')}
                       />
                     ),
                   )}
@@ -170,9 +181,7 @@ export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSu
 
           <div className="sticky bottom-0 mt-6 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur-sm sm:-mx-6 sm:px-6">
             <div className="mb-2 flex items-center justify-between text-xs font-medium text-slate-500">
-              <span>
-                {filledCells} of {totalCells} answered
-              </span>
+              <span>{t('studentFeedback.answeredCount', { filled: filledCells, total: totalCells })}</span>
               <span>{progressPercent}%</span>
             </div>
             <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
@@ -187,10 +196,14 @@ export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSu
                 onClick={onCancel}
                 className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition-colors duration-150 hover:bg-slate-50"
               >
-                Cancel
+                {t('studentFeedback.cancel')}
               </button>
               <Button onClick={handleSubmit} disabled={!isComplete || isSubmitting} isLoading={isSubmitting}>
-                {isSubmitting ? 'Submitting…' : `Submit All ${remaining} Feedback${remaining === 1 ? '' : 's'}`}
+                {isSubmitting
+                  ? t('studentFeedback.submitting')
+                  : remaining === 1
+                    ? t('studentFeedback.submitAll', { count: remaining })
+                    : t('studentFeedback.submitAllPlural', { count: remaining })}
               </Button>
             </div>
           </div>

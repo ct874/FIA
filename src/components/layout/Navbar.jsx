@@ -2,14 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import FiaLogo from '../branding/FiaLogo'
 import Spinner from '../ui/Spinner'
+import LanguageSwitcher from '../ui/LanguageSwitcher'
 import { useAuth } from '../../hooks/useAuth'
+import { useLanguage } from '../../hooks/useLanguage'
 import { ROUTES } from '../../utils/constants'
-
-const NAV_LINKS = [
-  { label: 'Dashboard', to: ROUTES.HOME },
-  { label: 'All Submissions', to: ROUTES.SUBMISSIONS },
-  { label: 'Export Data', to: ROUTES.EXPORT },
-]
 
 function navLinkClassName({ isActive }) {
   return `rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-all duration-200 ease-out lg:px-4 ${
@@ -68,7 +64,7 @@ function CloseIcon({ className = 'h-6 w-6' }) {
   )
 }
 
-function LogoutButton({ className = '', onClick, isLoggingOut }) {
+function LogoutButton({ className = '', onClick, isLoggingOut, label, loggingOutLabel }) {
   return (
     <button
       type="button"
@@ -82,7 +78,7 @@ function LogoutButton({ className = '', onClick, isLoggingOut }) {
         ${className}`}
     >
       {isLoggingOut ? <Spinner className="h-4 w-4" /> : <LogoutIcon />}
-      <span>Logout</span>
+      <span>{isLoggingOut ? loggingOutLabel : label}</span>
     </button>
   )
 }
@@ -90,8 +86,15 @@ function LogoutButton({ className = '', onClick, isLoggingOut }) {
 export default function Navbar() {
   const navigate = useNavigate()
   const { logout } = useAuth()
+  const { t } = useLanguage()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const navLinks = [
+    { label: t('nav.dashboard'), to: ROUTES.HOME },
+    { label: t('nav.allSubmissions'), to: ROUTES.SUBMISSIONS },
+    { label: t('nav.exportData'), to: ROUTES.EXPORT },
+  ]
 
   useEffect(() => {
     document.body.style.overflow = isDrawerOpen ? 'hidden' : ''
@@ -120,27 +123,33 @@ export default function Navbar() {
           <Link to={ROUTES.HOME} className="flex items-center gap-3">
             <FiaLogo className="h-9 w-9" />
             <span className="text-sm font-semibold tracking-tight text-slate-900 sm:text-base">
-              FIA Admin Panel
+              {t('nav.adminPanelTitle')}
             </span>
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex lg:gap-2">
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <NavLink key={link.to} to={link.to} className={navLinkClassName}>
                 {link.label}
               </NavLink>
             ))}
           </nav>
 
-          <div className="hidden md:block">
-            <LogoutButton onClick={handleLogout} isLoggingOut={isLoggingOut} />
+          <div className="hidden items-center gap-3 md:flex">
+            <LanguageSwitcher />
+            <LogoutButton
+              onClick={handleLogout}
+              isLoggingOut={isLoggingOut}
+              label={t('nav.logout')}
+              loggingOutLabel={t('nav.loggingOut')}
+            />
           </div>
 
           <button
             type="button"
             onClick={() => setIsDrawerOpen(true)}
             className="inline-flex items-center justify-center rounded-xl p-2 text-slate-600 transition-colors duration-200 hover:bg-slate-100 md:hidden"
-            aria-label="Open menu"
+            aria-label={t('nav.openMenu')}
           >
             <MenuIcon />
           </button>
@@ -161,33 +170,40 @@ export default function Navbar() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Navigation menu"
+        aria-label={t('common.navigationMenu')}
         className={`fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white shadow-2xl shadow-slate-900/10 transition-transform duration-300 ease-out md:hidden ${
           isDrawerOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
-          <span className="text-sm font-semibold text-slate-900">Menu</span>
+          <span className="text-sm font-semibold text-slate-900">{t('nav.menu')}</span>
           <button
             type="button"
             onClick={closeDrawer}
             className="inline-flex items-center justify-center rounded-xl p-2 text-slate-500 transition-colors duration-200 hover:bg-slate-100"
-            aria-label="Close menu"
+            aria-label={t('nav.closeMenu')}
           >
             <CloseIcon />
           </button>
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 p-4">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <NavLink key={link.to} to={link.to} onClick={closeDrawer} className={navLinkClassName}>
               {link.label}
             </NavLink>
           ))}
         </nav>
 
-        <div className="border-t border-slate-200 p-4">
-          <LogoutButton onClick={handleLogout} isLoggingOut={isLoggingOut} className="w-full" />
+        <div className="flex flex-col gap-3 border-t border-slate-200 p-4">
+          <LanguageSwitcher className="w-full justify-center" />
+          <LogoutButton
+            onClick={handleLogout}
+            isLoggingOut={isLoggingOut}
+            label={t('nav.logout')}
+            loggingOutLabel={t('nav.loggingOut')}
+            className="w-full"
+          />
         </div>
       </div>
     </>

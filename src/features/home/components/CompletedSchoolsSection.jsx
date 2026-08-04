@@ -4,44 +4,47 @@ import ErrorState from '../../../components/ui/ErrorState'
 import SummaryCard from '../../../components/ui/SummaryCard'
 import DashboardTable from '../../../components/table/DashboardTable'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
+import { useLanguage } from '../../../hooks/useLanguage'
 import { computeCompletedRows } from '../../../data/schoolRecords.derive'
 import { computeCompletedSchoolsSummary } from '../utils/dashboardStats'
 
-const COLUMNS = [
-  {
-    key: 'school',
-    label: 'School',
-    sortable: true,
-    wrap: true,
-    render: (row) => (
-      <div className="flex items-center gap-2">
-        <span className="font-medium text-slate-900">{row.school}</span>
-      </div>
-    ),
-  },
-  { key: 'district', label: 'District', sortable: true },
-  { key: 'tour', label: 'Tour', wrap: true },
-  { key: 'grade', label: 'Grade' },
-  { key: 'month', label: 'Month' },
-  { key: 'reach', label: 'Reach', render: (row) => row.reach.toLocaleString() },
-  { key: 'responses', label: 'Responses', render: (row) => row.responses.toLocaleString() },
-  { key: 'avgCsat', label: 'Avg CSAT', render: (row) => row.avgCsat.toFixed(1) },
-  { key: 'nps', label: 'NPS', render: (row) => `${row.nps}%` },
-]
-
 export default function CompletedSchoolsSection() {
   const { schools, isLoading, error, refetch } = useSchoolRecords()
+  const { t } = useLanguage()
   const rows = useMemo(() => computeCompletedRows(schools), [schools])
   const summary = useMemo(() => computeCompletedSchoolsSummary(rows), [rows])
+
+  const columns = [
+    {
+      key: 'school',
+      label: t('home.completed.columns.school'),
+      sortable: true,
+      wrap: true,
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-slate-900">{row.school}</span>
+        </div>
+      ),
+    },
+    { key: 'district', label: t('home.completed.columns.district'), sortable: true },
+    { key: 'tour', label: t('home.completed.columns.tour'), wrap: true },
+    { key: 'grade', label: t('home.completed.columns.grade') },
+    { key: 'month', label: t('home.completed.columns.month') },
+    { key: 'reach', label: t('home.completed.columns.reach'), render: (row) => row.reach.toLocaleString() },
+    {
+      key: 'responses',
+      label: t('home.completed.columns.responses'),
+      render: (row) => row.responses.toLocaleString(),
+    },
+    { key: 'avgCsat', label: t('home.completed.columns.avgCsat'), render: (row) => row.avgCsat.toFixed(1) },
+    { key: 'nps', label: t('home.completed.columns.nps'), render: (row) => `${row.nps}%` },
+  ]
 
   return (
     <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
       <div>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900">Completed Schools</h2>
-        <p className="mt-1.5 max-w-2xl text-sm text-slate-500">
-          Schools that have successfully completed all three videos and submitted all required
-          feedback.
-        </p>
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900">{t('home.completed.title')}</h2>
+        <p className="mt-1.5 max-w-2xl text-sm text-slate-500">{t('home.completed.description')}</p>
       </div>
 
       {isLoading ? (
@@ -53,22 +56,20 @@ export default function CompletedSchoolsSection() {
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <SummaryCard label="Completed Schools" value={summary.completedSchools} />
-            <SummaryCard label="Total Reach" value={summary.totalReach.toLocaleString()} />
-            <SummaryCard label="Total Responses" value={summary.totalResponses.toLocaleString()} />
-            <SummaryCard label="Average CSAT" value={summary.avgCsat.toFixed(1)} />
-            <SummaryCard label="Average NPS" value={`${summary.avgNps}%`} />
+            <SummaryCard label={t('home.completed.completedSchools')} value={summary.completedSchools} />
+            <SummaryCard label={t('home.completed.totalReach')} value={summary.totalReach.toLocaleString()} />
+            <SummaryCard label={t('home.completed.totalResponses')} value={summary.totalResponses.toLocaleString()} />
+            <SummaryCard label={t('home.completed.averageCsat')} value={summary.avgCsat.toFixed(1)} />
+            <SummaryCard label={t('home.completed.averageNps')} value={`${summary.avgNps}%`} />
           </div>
 
           <div className="mt-6">
             <DashboardTable
-              columns={COLUMNS}
+              columns={columns}
               data={rows}
               searchKeys={['school', 'district']}
-              searchPlaceholder="Search by school or district..."
-              emptyMessage={
-                rows.length === 0 ? 'No Completed Schools Yet' : 'No completed schools match your search.'
-              }
+              searchPlaceholder={t('home.completed.searchPlaceholder')}
+              emptyMessage={rows.length === 0 ? t('home.completed.emptyAll') : t('home.completed.emptySearch')}
               fluid
             />
           </div>

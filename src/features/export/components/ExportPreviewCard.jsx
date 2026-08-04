@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import Spinner from '../../../components/ui/Spinner'
 import ErrorState from '../../../components/ui/ErrorState'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
+import { useLanguage } from '../../../hooks/useLanguage'
 import { loadProgrammeSetup } from '../utils/programmeSetup'
 import {
   STUDENT_REACH_COLUMNS,
@@ -14,13 +15,6 @@ import {
   isCellMissing,
 } from '../utils/exportFormats'
 import { getMonthlyCyclePresets, formatDateForInput, parseDateFromInput } from '../utils/dateRangeCycles'
-
-const TABS = [
-  { key: 'reach', label: 'Student Reach' },
-  { key: 'studentFeedback', label: 'Student Feedback' },
-  { key: 'teacherFeedback', label: 'Teacher Feedback' },
-  { key: 'afe', label: 'AFE (Official)' },
-]
 
 const PREVIEW_LIMIT = 50
 
@@ -53,9 +47,17 @@ function RefreshIcon({ className = 'h-3.5 w-3.5' }) {
 
 export default function ExportPreviewCard({ directoryVersion }) {
   const { schools, isLoading, error, refetch } = useSchoolRecords()
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('studentFeedback')
   const [range, setRange] = useState({ start: null, end: null })
   const [refreshKey, setRefreshKey] = useState(0)
+
+  const TABS = [
+    { key: 'reach', label: t('export.exportPreview.tabs.reach') },
+    { key: 'studentFeedback', label: t('export.exportPreview.tabs.studentFeedback') },
+    { key: 'teacherFeedback', label: t('export.exportPreview.tabs.teacherFeedback') },
+    { key: 'afe', label: t('export.exportPreview.tabs.afe') },
+  ]
 
   const setup = useMemo(
     () => loadProgrammeSetup(),
@@ -102,60 +104,62 @@ export default function ExportPreviewCard({ directoryVersion }) {
   return (
     <section className="mt-8 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
       <div>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900">Export Preview</h2>
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900">{t('export.exportPreview.title')}</h2>
         <p className="mt-1.5 max-w-2xl text-sm text-slate-500">
-          Live preview in the exact export format.{' '}
-          <span className="font-medium text-amber-600">⚠ Yellow = missing field</span>
+          {t('export.exportPreview.description')}{' '}
+          <span className="font-medium text-amber-600">{t('export.exportPreview.missingFieldNote')}</span>
         </p>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className={SECONDARY_BUTTON}>
-          <RefreshIcon /> Refresh
+          <RefreshIcon /> {t('export.exportPreview.refresh')}
         </button>
         <button
           type="button"
           onClick={() => handleDownload('reach', STUDENT_REACH_COLUMNS, 'fia-student-reach')}
           className={TEAL_BUTTON}
         >
-          Student Reach CSV (Form 1)
+          {t('export.exportPreview.studentReachCsv')}
         </button>
         <button
           type="button"
           onClick={() => handleDownload('studentFeedback', FEEDBACK_COLUMNS, 'fia-student-feedback')}
           className={TEAL_BUTTON}
         >
-          Student Feedback CSV (Form 2)
+          {t('export.exportPreview.studentFeedbackCsv')}
         </button>
         <button
           type="button"
           onClick={() => handleDownload('teacherFeedback', FEEDBACK_COLUMNS, 'fia-teacher-feedback')}
           className={TEAL_BUTTON}
         >
-          Teacher Feedback CSV (Form 2)
+          {t('export.exportPreview.teacherFeedbackCsv')}
         </button>
         <button
           type="button"
           onClick={() => handleDownload('afe', AFE_COLUMNS, 'fia-afe-official')}
           className={NAVY_BUTTON}
         >
-          AFE CSV (Official)
+          {t('export.exportPreview.afeCsv')}
         </button>
         <button type="button" onClick={handleDownloadAll} className={AMBER_BUTTON}>
-          Download All Files
+          {t('export.exportPreview.downloadAll')}
         </button>
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Date Range Filter</span>
-          <span className="text-xs text-slate-400">Cycle: 5th → 4th</span>
+          <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            {t('export.exportPreview.dateRangeFilter')}
+          </span>
+          <span className="text-xs text-slate-400">{t('export.exportPreview.cycleLabel')}</span>
         </div>
 
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <div>
             <label htmlFor="rangeFrom" className="mb-1 block text-xs text-slate-500">
-              From
+              {t('export.exportPreview.from')}
             </label>
             <input
               id="rangeFrom"
@@ -169,7 +173,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
           </div>
           <div>
             <label htmlFor="rangeTo" className="mb-1 block text-xs text-slate-500">
-              To
+              {t('export.exportPreview.to')}
             </label>
             <input
               id="rangeTo"
@@ -199,7 +203,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
               onClick={() => setRange({ start: null, end: null })}
               className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors duration-150 hover:text-slate-800"
             >
-              ✕ Clear
+              {t('export.exportPreview.clear')}
             </button>
           )}
         </div>
@@ -223,8 +227,10 @@ export default function ExportPreviewCard({ directoryVersion }) {
       </div>
 
       <p className="mt-3 text-xs text-slate-500">
-        {activeRows.length} row{activeRows.length === 1 ? '' : 's'}
-        {activeRows.length > PREVIEW_LIMIT ? ` — showing first ${PREVIEW_LIMIT}` : ''}
+        {activeRows.length === 1
+          ? t('export.exportPreview.rowCount', { count: activeRows.length })
+          : t('export.exportPreview.rowCountPlural', { count: activeRows.length })}
+        {activeRows.length > PREVIEW_LIMIT ? t('export.exportPreview.showingFirst', { limit: PREVIEW_LIMIT }) : ''}
       </p>
 
       {isLoading ? (
@@ -260,7 +266,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
                           missing ? 'bg-amber-100 font-medium text-amber-700' : 'text-slate-700'
                         }`}
                       >
-                        {missing ? '⚠ missing' : String(row[column] ?? '')}
+                        {missing ? t('export.exportPreview.missingCell') : String(row[column] ?? '')}
                       </td>
                     )
                   })}
@@ -270,7 +276,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
               {previewRows.length === 0 && (
                 <tr>
                   <td colSpan={activeColumns.length} className="px-3 py-10 text-center text-slate-400">
-                    No rows match the current filter.
+                    {t('export.exportPreview.noRows')}
                   </td>
                 </tr>
               )}

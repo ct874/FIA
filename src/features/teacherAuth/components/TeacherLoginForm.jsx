@@ -5,6 +5,7 @@ import PasswordInput from '../../../components/ui/PasswordInput'
 import Checkbox from '../../../components/ui/Checkbox'
 import Button from '../../../components/ui/Button'
 import { useTeacherAuth } from '../../../hooks/useTeacherAuth'
+import { useLanguage } from '../../../hooks/useLanguage'
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { TEACHER_ROUTES } from '../../../utils/constants'
 
@@ -13,6 +14,7 @@ const INITIAL_FORM = { udise: '', password: '' }
 export default function TeacherLoginForm() {
   const navigate = useNavigate()
   const { login } = useTeacherAuth()
+  const { t } = useLanguage()
 
   const [form, setForm] = useState(INITIAL_FORM)
   const [rememberMe, setRememberMe] = useState(false)
@@ -28,7 +30,7 @@ export default function TeacherLoginForm() {
     event.preventDefault()
 
     if (!form.udise.trim() || !form.password) {
-      setFormError('Please enter your UDISE and password.')
+      setFormError(t('teacherAuth.missingFields'))
       return
     }
 
@@ -39,7 +41,7 @@ export default function TeacherLoginForm() {
       await login({ ...form, rememberMe })
       navigate(TEACHER_ROUTES.DASHBOARD, { replace: true })
     } catch (error) {
-      setFormError(getApiErrorMessage(error, 'Unable to sign in. Please check your UDISE and password.'))
+      setFormError(getApiErrorMessage(error, t('teacherAuth.signInError')))
     } finally {
       setIsSubmitting(false)
     }
@@ -58,19 +60,19 @@ export default function TeacherLoginForm() {
 
       <TextInput
         id="udise"
-        label="UDISE Code"
+        label={t('teacherAuth.udiseLabel')}
         type="text"
         autoComplete="username"
-        placeholder="Enter your school's UDISE code"
+        placeholder={t('teacherAuth.udisePlaceholder')}
         value={form.udise}
         onChange={handleChange('udise')}
       />
 
       <PasswordInput
         id="teacherPassword"
-        label="Password"
+        label={t('teacherAuth.passwordLabel')}
         autoComplete="current-password"
-        placeholder="Default password is your UDISE code"
+        placeholder={t('teacherAuth.passwordPlaceholder')}
         value={form.password}
         onChange={handleChange('password')}
       />
@@ -78,14 +80,14 @@ export default function TeacherLoginForm() {
       <div className="flex items-center justify-between">
         <Checkbox
           id="teacherRememberMe"
-          label="Remember me"
+          label={t('teacherAuth.rememberMe')}
           checked={rememberMe}
           onChange={(event) => setRememberMe(event.target.checked)}
         />
       </div>
 
       <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
-        {isSubmitting ? 'Signing in…' : 'Sign in'}
+        {isSubmitting ? t('teacherAuth.signingIn') : t('teacherAuth.signIn')}
       </Button>
     </form>
   )

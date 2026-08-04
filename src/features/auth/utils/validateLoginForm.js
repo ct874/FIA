@@ -1,12 +1,12 @@
-export function validateLoginForm({ loginId, password }) {
+export function validateLoginForm({ loginId, password }, t) {
   const errors = {}
 
   if (!loginId || !loginId.trim()) {
-    errors.loginId = 'Login ID is required'
+    errors.loginId = t('validation.loginIdRequired')
   }
 
   if (!password) {
-    errors.password = 'Password is required'
+    errors.password = t('validation.passwordRequired')
   }
 
   return errors

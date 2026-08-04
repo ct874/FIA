@@ -7,6 +7,7 @@ import SummaryCard from '../../../components/ui/SummaryCard'
 import TourMetricsSection from './TourMetricsSection'
 import { CsatItpCard, NpsCard } from './TourMetricCard'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
+import { useLanguage } from '../../../hooks/useLanguage'
 import {
   getOverviewFilterOptions,
   computeOverviewSummary,
@@ -15,7 +16,7 @@ import {
 
 const INITIAL_FILTERS = { district: '', tourId: '', month: '' }
 
-function buildResultLabel(filters, options) {
+function buildResultLabel(filters, options, t) {
   const parts = []
   if (filters.district) parts.push(filters.district)
   if (filters.tourId) {
@@ -23,11 +24,12 @@ function buildResultLabel(filters, options) {
   }
   if (filters.month) parts.push(filters.month)
 
-  return parts.length > 0 ? `Showing: ${parts.join(' · ')}` : 'Showing all data'
+  return parts.length > 0 ? t('home.filter.showing', { parts: parts.join(' · ') }) : t('home.filter.showingAll')
 }
 
 export default function DashboardOverview() {
   const { schools, isLoading, error, refetch } = useSchoolRecords()
+  const { t } = useLanguage()
   const [filters, setFilters] = useState(INITIAL_FILTERS)
 
   const options = useMemo(() => getOverviewFilterOptions(schools), [schools])
@@ -49,7 +51,7 @@ export default function DashboardOverview() {
         filters={filters}
         onFilterChange={handleFilterChange}
         onClear={handleClear}
-        resultLabel={buildResultLabel(filters, options)}
+        resultLabel={buildResultLabel(filters, options, t)}
       />
 
       {isLoading ? (
@@ -61,21 +63,29 @@ export default function DashboardOverview() {
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <SummaryCard accent label="Schools" value={summary.schoolsCount} />
-            <SummaryCard accent label="Total Reach (Unique)" value={summary.totalReach.toLocaleString()} />
-            <SummaryCard accent label="Student Feedback Responses" value={summary.studentResponses.toLocaleString()} />
-            <SummaryCard accent label="Teacher Responses" value={summary.teacherResponses.toLocaleString()} />
-            <SummaryCard accent label="Overall CSAT (Enjoy)" value={summary.overallCsat.toFixed(2)} />
-            <SummaryCard accent label="Overall ITP (Interest)" value={summary.overallItp.toFixed(2)} />
+            <SummaryCard accent label={t('home.summary.schools')} value={summary.schoolsCount} />
+            <SummaryCard accent label={t('home.summary.totalReach')} value={summary.totalReach.toLocaleString()} />
+            <SummaryCard
+              accent
+              label={t('home.summary.studentFeedbackResponses')}
+              value={summary.studentResponses.toLocaleString()}
+            />
+            <SummaryCard
+              accent
+              label={t('home.summary.teacherResponses')}
+              value={summary.teacherResponses.toLocaleString()}
+            />
+            <SummaryCard accent label={t('home.summary.overallCsat')} value={summary.overallCsat.toFixed(2)} />
+            <SummaryCard accent label={t('home.summary.overallItp')} value={summary.overallItp.toFixed(2)} />
           </div>
 
-          <TourMetricsSection title="CSAT & ITP by Tour">
+          <TourMetricsSection title={t('home.csatItpByTour')}>
             {tourBreakdown.map((tour) => (
               <CsatItpCard key={tour.tourId} tour={tour} />
             ))}
           </TourMetricsSection>
 
-          <TourMetricsSection title="NPS by Tour">
+          <TourMetricsSection title={t('home.npsByTour')}>
             {tourBreakdown.map((tour) => (
               <NpsCard key={tour.tourId} tour={tour} />
             ))}

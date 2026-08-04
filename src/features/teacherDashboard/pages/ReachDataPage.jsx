@@ -7,6 +7,7 @@ import Skeleton from '../../../components/ui/Skeleton'
 import WorkflowStepper from '../../../components/ui/WorkflowStepper'
 import { useTeacherStatus } from '../../../hooks/useTeacherStatus'
 import { useToast } from '../../../hooks/useToast'
+import { useLanguage } from '../../../hooks/useLanguage'
 import { fetchStudentReach, submitStudentReach } from '../../../api/studentReach.api'
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 
@@ -21,13 +22,13 @@ function CheckBadgeIcon({ className = 'h-4 w-4' }) {
   )
 }
 
-function PreviouslyAddedGrades({ records }) {
+function PreviouslyAddedGrades({ records, t }) {
   if (records.length === 0) return null
 
   return (
     <div className="mb-6">
       <p className="mb-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">
-        Previously Added Grades
+        {t('reachData.previouslyAdded')}
       </p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {records.map((record) => (
@@ -39,16 +40,18 @@ function PreviouslyAddedGrades({ records }) {
               <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-green-500 text-white">
                 <CheckBadgeIcon className="h-3.5 w-3.5" />
               </span>
-              <h3 className="text-base font-semibold text-slate-900">Grade {record.grade}</h3>
+              <h3 className="text-base font-semibold text-slate-900">
+                {t('reachData.gradeLabel')} {record.grade}
+              </h3>
             </div>
 
             <p className="mt-3 text-sm text-slate-600">
-              <span className="font-medium text-slate-500">Students:</span>{' '}
+              <span className="font-medium text-slate-500">{t('reachData.studentsLabel')}</span>{' '}
               <span className="font-semibold text-slate-900">{record.studentsReached}</span>
             </p>
 
             <div className="mt-2">
-              <p className="text-sm font-medium text-slate-500">Tours:</p>
+              <p className="text-sm font-medium text-slate-500">{t('reachData.toursLabel')}</p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {record.tours.map((tour) => (
                   <span
@@ -69,6 +72,7 @@ function PreviouslyAddedGrades({ records }) {
 
 export default function ReachDataPage() {
   const toast = useToast()
+  const { t } = useLanguage()
   const { status, meta, refetchStatus } = useTeacherStatus()
 
   const [records, setRecords] = useState([])
@@ -89,7 +93,7 @@ export default function ReachDataPage() {
       try {
         await loadRecords()
       } catch (error) {
-        if (isMounted) toast.error(getApiErrorMessage(error, 'Could not load reach data.'))
+        if (isMounted) toast.error(getApiErrorMessage(error, t('reachData.loadError')))
       } finally {
         if (isMounted) setIsLoading(false)
       }
@@ -108,8 +112,8 @@ export default function ReachDataPage() {
     () =>
       meta.grades
         .filter((grade) => Number(grade) >= MIN_VISIBLE_GRADE)
-        .map((grade) => ({ value: grade, label: `Grade ${grade}` })),
-    [meta.grades],
+        .map((grade) => ({ value: grade, label: `${t('reachData.gradeLabel')} ${grade}` })),
+    [meta.grades, t],
   )
 
   const toggleTour = (tourId) => {
@@ -123,11 +127,11 @@ export default function ReachDataPage() {
 
   const validate = () => {
     const nextErrors = {}
-    if (!form.grade) nextErrors.grade = 'Select a grade.'
+    if (!form.grade) nextErrors.grade = t('reachData.selectGradeError')
     if (!form.studentCount || Number(form.studentCount) <= 0) {
-      nextErrors.studentCount = 'Enter the number of students.'
+      nextErrors.studentCount = t('reachData.enterStudentsError')
     }
-    if (form.tourIds.length === 0) nextErrors.tourIds = 'Select at least one Career Tour.'
+    if (form.tourIds.length === 0) nextErrors.tourIds = t('reachData.selectTourError')
     return nextErrors
   }
 
@@ -145,11 +149,11 @@ export default function ReachDataPage() {
         uniqueStudentCount: Number(form.studentCount),
         tourIds: form.tourIds,
       })
-      toast.success('Reach Saved Successfully')
+      toast.success(t('reachData.saveSuccess'))
       setForm(EMPTY_FORM)
       await Promise.all([loadRecords(), refetchStatus()])
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Could not save reach data.'))
+      toast.error(getApiErrorMessage(error, t('reachData.saveError')))
     } finally {
       setIsSubmitting(false)
     }
@@ -169,14 +173,11 @@ export default function ReachDataPage() {
       <WorkflowStepper currentStep={2} completedSteps={status.teacherFeedbackCompleted ? [1] : []} />
 
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Student Reach</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Add a grade every time you run a Career Tour — adding the same grade again merges into its
-          existing totals instead of replacing them.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{t('reachData.title')}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t('reachData.description')}</p>
       </div>
 
-      <PreviouslyAddedGrades records={records} />
+      <PreviouslyAddedGrades records={records} t={t} />
 
       <form
         onSubmit={handleAdd}
@@ -186,8 +187,8 @@ export default function ReachDataPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Select
             id="grade"
-            label="Grade"
-            placeholder="-- Select --"
+            label={t('reachData.gradeLabel')}
+            placeholder={t('reachData.gradeSelectPlaceholder')}
             options={gradeOptions}
             value={form.grade}
             onChange={(event) => setForm((prev) => ({ ...prev, grade: event.target.value }))}
@@ -195,10 +196,10 @@ export default function ReachDataPage() {
           />
           <TextInput
             id="studentCount"
-            label="Number of Students"
+            label={t('reachData.numberOfStudents')}
             type="number"
             min="0"
-            placeholder="e.g. 40"
+            placeholder={t('reachData.numberOfStudentsPlaceholder')}
             value={form.studentCount}
             onChange={(event) => setForm((prev) => ({ ...prev, studentCount: event.target.value }))}
             error={errors.studentCount}
@@ -206,7 +207,7 @@ export default function ReachDataPage() {
         </div>
 
         <div>
-          <p className="mb-2 text-sm font-medium text-slate-700">Career Tours — select all that apply</p>
+          <p className="mb-2 text-sm font-medium text-slate-700">{t('reachData.careerTours')}</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {meta.tours.map((tour) => (
               <label
@@ -227,7 +228,7 @@ export default function ReachDataPage() {
         </div>
 
         <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
-          {isSubmitting ? 'Saving…' : 'Add Grade'}
+          {isSubmitting ? t('reachData.saving') : t('reachData.addGrade')}
         </Button>
       </form>
     </div>

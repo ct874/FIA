@@ -2,16 +2,18 @@ import { useMemo, useState } from 'react'
 import SearchInput from '../ui/SearchInput'
 import TableHeader from './TableHeader'
 import TablePagination from './TablePagination'
+import { useLanguage } from '../../hooks/useLanguage'
 
 export default function DashboardTable({
   columns,
   data,
   searchKeys = [],
-  searchPlaceholder = 'Search...',
-  emptyMessage = 'No records found.',
+  searchPlaceholder,
+  emptyMessage,
   pageSize = 10,
   fluid = false,
 }) {
+  const { t } = useLanguage()
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
@@ -113,7 +115,7 @@ export default function DashboardTable({
                   colSpan={columns.length}
                   className="px-4 py-10 text-center text-sm text-slate-400"
                 >
-                  {emptyMessage}
+                  {emptyMessage || t('table.noRecords')}
                 </td>
               </tr>
             )}

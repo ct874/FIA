@@ -5,11 +5,13 @@ import ErrorState from '../../../components/ui/ErrorState'
 import { getFullSchoolDirectory } from '../../../services/schoolDirectory.service'
 import { getSchoolExportCodes, saveSchoolExportCodes } from '../../../services/schoolExportCodes.service'
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
+import { useLanguage } from '../../../hooks/useLanguage'
 
 const CODE_INPUT_CLASSES =
   'w-32 rounded-lg border border-slate-200 px-2 py-1.5 text-sm text-slate-900 transition-all duration-150 ease-out focus:border-slate-400 focus:ring-2 focus:ring-slate-100 focus:outline-none'
 
 export default function PerSchoolExportCodesTable({ directoryVersion }) {
+  const { t } = useLanguage()
   const [codes, setCodes] = useState(getSchoolExportCodes)
   const [directory, setDirectory] = useState(null)
   const [error, setError] = useState(null)
@@ -19,7 +21,7 @@ export default function PerSchoolExportCodesTable({ directoryVersion }) {
     setError(null)
     getFullSchoolDirectory()
       .then((result) => setDirectory(result))
-      .catch((err) => setError(getApiErrorMessage(err, 'Could not load schools.')))
+      .catch((err) => setError(getApiErrorMessage(err, t('export.perSchoolCodes.loadError'))))
   }
 
   useEffect(() => {
@@ -29,11 +31,12 @@ export default function PerSchoolExportCodesTable({ directoryVersion }) {
         if (isMounted) setDirectory(result)
       })
       .catch((err) => {
-        if (isMounted) setError(getApiErrorMessage(err, 'Could not load schools.'))
+        if (isMounted) setError(getApiErrorMessage(err, t('export.perSchoolCodes.loadError')))
       })
     return () => {
       isMounted = false
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [directoryVersion])
 
   const handleCodeChange = (udise, field) => (event) => {
@@ -48,7 +51,7 @@ export default function PerSchoolExportCodesTable({ directoryVersion }) {
     () => [
       {
         key: 'schoolName',
-        label: 'School',
+        label: t('home.registered.columns.school'),
         sortable: true,
         render: (row) => (
           <div>
@@ -59,11 +62,11 @@ export default function PerSchoolExportCodesTable({ directoryVersion }) {
       },
       {
         key: 'districtCode',
-        label: 'District Code*',
+        label: t('export.perSchoolCodes.districtCode'),
         render: (row) => (
           <input
             type="text"
-            placeholder="e.g. S08116"
+            placeholder={t('export.perSchoolCodes.districtCodePlaceholder')}
             value={codes[row.udise]?.districtCode || ''}
             onChange={handleCodeChange(row.udise, 'districtCode')}
             className={CODE_INPUT_CLASSES}
@@ -72,11 +75,11 @@ export default function PerSchoolExportCodesTable({ directoryVersion }) {
       },
       {
         key: 'postalCode',
-        label: 'Postal Code',
+        label: t('export.perSchoolCodes.postalCode'),
         render: (row) => (
           <input
             type="text"
-            placeholder="e.g. 342001"
+            placeholder={t('export.perSchoolCodes.postalCodePlaceholder')}
             value={codes[row.udise]?.postalCode || ''}
             onChange={handleCodeChange(row.udise, 'postalCode')}
             className={CODE_INPUT_CLASSES}
@@ -84,16 +87,16 @@ export default function PerSchoolExportCodesTable({ directoryVersion }) {
         ),
       },
     ],
-    [codes],
+    [codes, t],
   )
 
   return (
     <div className="mt-6">
       <p className="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">
-        Per-School District Code &amp; Postal Code
+        {t('export.perSchoolCodes.title')}
       </p>
       <p className="mb-3 text-sm text-slate-500">
-        Required for export. District code format: <span className="font-medium text-slate-700">S08116</span>.
+        {t('export.perSchoolCodes.description', { example: 'S08116' })}
       </p>
 
       {isDirectoryLoading && !error ? (
@@ -107,8 +110,8 @@ export default function PerSchoolExportCodesTable({ directoryVersion }) {
           columns={columns}
           data={directory}
           searchKeys={['schoolName', 'udise']}
-          searchPlaceholder="Search schools..."
-          emptyMessage={directory.length === 0 ? 'No Schools Registered Yet' : 'No schools match your search.'}
+          searchPlaceholder={t('export.perSchoolCodes.searchPlaceholder')}
+          emptyMessage={directory.length === 0 ? t('export.perSchoolCodes.emptyAll') : t('export.perSchoolCodes.emptySearch')}
         />
       )}
     </div>

@@ -1,4 +1,8 @@
+import { useLanguage } from '../../hooks/useLanguage'
+
 export default function TablePagination({ page, totalPages, totalItems, pageSize, onPageChange }) {
+  const { t } = useLanguage()
+
   if (totalItems === 0) return null
 
   const rangeStart = (page - 1) * pageSize + 1
@@ -7,10 +11,7 @@ export default function TablePagination({ page, totalPages, totalItems, pageSize
   return (
     <div className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
       <p className="text-xs text-slate-500">
-        Showing <span className="font-medium text-slate-700">{rangeStart}</span>
-        {'–'}
-        <span className="font-medium text-slate-700">{rangeEnd}</span> of{' '}
-        <span className="font-medium text-slate-700">{totalItems}</span>
+        {t('common.showingRange', { start: rangeStart, end: rangeEnd, total: totalItems })}
       </p>
 
       <div className="flex items-center gap-2">
@@ -22,10 +23,10 @@ export default function TablePagination({ page, totalPages, totalItems, pageSize
             transition-all duration-150 ease-out hover:bg-slate-100
             disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
         >
-          Previous
+          {t('common.previous')}
         </button>
         <span className="px-1 text-xs font-medium text-slate-500">
-          Page {page} of {totalPages}
+          {t('common.pageOf', { page, totalPages })}
         </span>
         <button
           type="button"
@@ -35,7 +36,7 @@ export default function TablePagination({ page, totalPages, totalItems, pageSize
             transition-all duration-150 ease-out hover:bg-slate-100
             disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
         >
-          Next
+          {t('common.next')}
         </button>
       </div>
     </div>

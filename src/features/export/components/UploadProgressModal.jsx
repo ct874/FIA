@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Modal from '../../../components/ui/Modal'
+import { useLanguage } from '../../../hooks/useLanguage'
 
-const PHASES = ['Reading Excel...', 'Validating...', 'Checking Existing Schools...', 'Saving Schools...']
 const PHASE_INTERVAL_MS = 650
 
 function CheckIcon({ className = 'h-6 w-6' }) {
@@ -13,6 +13,8 @@ function CheckIcon({ className = 'h-6 w-6' }) {
 }
 
 export default function UploadProgressModal({ isOpen, isComplete }) {
+  const { t } = useLanguage()
+  const phases = t('export.progressModal.phases')
   const [phaseIndex, setPhaseIndex] = useState(0)
   const intervalRef = useRef(null)
 
@@ -20,10 +22,11 @@ export default function UploadProgressModal({ isOpen, isComplete }) {
     if (!isOpen) return undefined
 
     intervalRef.current = setInterval(() => {
-      setPhaseIndex((prev) => Math.min(prev + 1, PHASES.length - 1))
+      setPhaseIndex((prev) => Math.min(prev + 1, phases.length - 1))
     }, PHASE_INTERVAL_MS)
 
     return () => clearInterval(intervalRef.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
   useEffect(() => {
@@ -32,8 +35,8 @@ export default function UploadProgressModal({ isOpen, isComplete }) {
     }
   }, [isComplete])
 
-  const currentLabel = isComplete ? 'Completed' : PHASES[phaseIndex]
-  const progressPercent = isComplete ? 100 : Math.round(((phaseIndex + 1) / PHASES.length) * 90)
+  const currentLabel = isComplete ? t('export.progressModal.completed') : phases[phaseIndex]
+  const progressPercent = isComplete ? 100 : Math.round(((phaseIndex + 1) / phases.length) * 90)
 
   return (
     <Modal isOpen={isOpen} onClose={() => {}} closeOnBackdrop={false} showCloseButton={false} size="sm">
@@ -46,7 +49,7 @@ export default function UploadProgressModal({ isOpen, isComplete }) {
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-slate-100 border-t-blue-600" />
         )}
 
-        <h3 className="mt-4 text-lg font-semibold text-slate-900">Uploading Schools...</h3>
+        <h3 className="mt-4 text-lg font-semibold text-slate-900">{t('export.progressModal.title')}</h3>
 
         <div className="mt-6 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div

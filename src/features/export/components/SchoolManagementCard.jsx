@@ -4,16 +4,10 @@ import Spinner from '../../../components/ui/Spinner'
 import AlertPopup from '../../../components/ui/AlertPopup'
 import { downloadSchoolListTemplate } from '../utils/schoolListExcel'
 import { fetchSchoolsRequest, uploadSchoolListRequest } from '../../../api/schools.api'
+import { useLanguage } from '../../../hooks/useLanguage'
 import UploadSchoolListModal from './UploadSchoolListModal'
 import UploadProgressModal from './UploadProgressModal'
 import UploadSummaryModal from './UploadSummaryModal'
-
-const COLUMNS = [
-  { key: 'udise', label: 'UDISE', sortable: true },
-  { key: 'schoolName', label: 'School Name', sortable: true },
-  { key: 'district', label: 'District', sortable: true },
-  { key: 'state', label: 'State' },
-]
 
 function DownloadIcon({ className = 'h-4 w-4' }) {
   return (
@@ -44,6 +38,7 @@ function UploadIcon({ className = 'h-4 w-4' }) {
 }
 
 export default function SchoolManagementCard({ directoryVersion, onDirectoryChanged }) {
+  const { t } = useLanguage()
   const [backendSchools, setBackendSchools] = useState(null)
   const isBackendLoading = backendSchools === null
 
@@ -56,6 +51,13 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
   const [missingColumnsPopup, setMissingColumnsPopup] = useState(null)
   const [genericErrorPopup, setGenericErrorPopup] = useState(null)
   const [lastUploadedSignature, setLastUploadedSignature] = useState(null)
+
+  const columns = [
+    { key: 'udise', label: t('export.schoolManagement.columns.udise'), sortable: true },
+    { key: 'schoolName', label: t('export.schoolManagement.columns.schoolName'), sortable: true },
+    { key: 'district', label: t('export.schoolManagement.columns.district'), sortable: true },
+    { key: 'state', label: t('export.schoolManagement.columns.state') },
+  ]
 
   const loadBackendSchools = async () => {
     try {
@@ -84,11 +86,11 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
 
   const showSingleResultPopup = (result) => {
     if (result.status === 'registered') {
-      setSinglePopup({ variant: 'success', title: 'School Registered Successfully', result })
+      setSinglePopup({ variant: 'success', titleKey: 'export.schoolManagement.registeredTitle', result })
     } else if (result.status === 'duplicate') {
-      setSinglePopup({ variant: 'error', title: 'School Already Registered', result })
+      setSinglePopup({ variant: 'error', titleKey: 'export.schoolManagement.duplicateTitle', result })
     } else {
-      setSinglePopup({ variant: 'warning', title: 'Invalid Row', result })
+      setSinglePopup({ variant: 'warning', titleKey: 'export.schoolManagement.invalidTitle', result })
     }
   }
 
@@ -121,7 +123,7 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
         setMissingColumnsPopup(missingColumns)
       } else {
         setGenericErrorPopup(
-          error?.response?.data?.message || 'Something went wrong while uploading. Please try again.',
+          error?.response?.data?.message || t('export.schoolManagement.uploadFailedFallback'),
         )
       }
     }
@@ -131,10 +133,10 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
     <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight text-slate-900">School Management</h2>
-          <p className="mt-1.5 max-w-2xl text-sm text-slate-500">
-            Upload a school list. Only UDISEs in this list can log in as teachers.
-          </p>
+          <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+            {t('export.schoolManagement.title')}
+          </h2>
+          <p className="mt-1.5 max-w-2xl text-sm text-slate-500">{t('export.schoolManagement.description')}</p>
         </div>
 
         <div className="flex shrink-0 gap-2">
@@ -145,7 +147,7 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
               transition-all duration-200 ease-out hover:bg-slate-100"
           >
             <DownloadIcon />
-            Download Template
+            {t('export.schoolManagement.downloadTemplate')}
           </button>
           <button
             type="button"
@@ -154,35 +156,26 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
               transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-md hover:shadow-slate-900/20"
           >
             <UploadIcon />
-            Upload School List
+            {t('export.schoolManagement.uploadSchoolList')}
           </button>
         </div>
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
         <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-          Required Excel columns
+          {t('export.schoolManagement.requiredColumns')}
         </p>
         <ul className="mt-2 space-y-1 text-sm text-slate-600">
-          <li>
-            <span className="font-semibold text-slate-800">UDISE</span> — 10-digit school code
-            (used as username &amp; default password)
-          </li>
-          <li>
-            <span className="font-semibold text-slate-800">School Name</span> — Full school name
-          </li>
-          <li>
-            <span className="font-semibold text-slate-800">District</span> — District name
-          </li>
-          <li>
-            <span className="font-semibold text-slate-800">State</span> — State name
-          </li>
+          <li>{t('export.schoolManagement.udiseHelp')}</li>
+          <li>{t('export.schoolManagement.schoolNameHelp')}</li>
+          <li>{t('export.schoolManagement.districtHelp')}</li>
+          <li>{t('export.schoolManagement.stateHelp')}</li>
         </ul>
       </div>
 
       <div className="mt-6">
         <p className="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase">
-          Current Schools ({directory.length}) — these UDISEs can log in as teachers
+          {t('export.schoolManagement.currentSchools', { count: directory.length })}
         </p>
 
         {isBackendLoading ? (
@@ -191,11 +184,11 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
           </div>
         ) : (
           <DashboardTable
-            columns={COLUMNS}
+            columns={columns}
             data={directory}
             searchKeys={['udise', 'schoolName', 'district']}
-            searchPlaceholder="Search by UDISE, school or district..."
-            emptyMessage="No schools uploaded yet."
+            searchPlaceholder={t('export.schoolManagement.searchPlaceholder')}
+            emptyMessage={t('export.schoolManagement.emptyAll')}
           />
         )}
       </div>
@@ -220,30 +213,30 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
         isOpen={invalidFilePopup}
         onClose={() => setInvalidFilePopup(false)}
         variant="error"
-        title="Invalid File"
+        title={t('export.schoolManagement.invalidFileTitle')}
       >
-        Only Excel (.xlsx) files are allowed.
+        {t('export.schoolManagement.invalidFileMessage')}
       </AlertPopup>
 
       <AlertPopup
         isOpen={Boolean(missingColumnsPopup)}
         onClose={() => setMissingColumnsPopup(null)}
         variant="error"
-        title="Missing Columns"
+        title={t('export.schoolManagement.missingColumnsTitle')}
       >
         <ul className="space-y-1 font-medium text-slate-800">
           {(missingColumnsPopup || []).map((column) => (
             <li key={column}>{column}</li>
           ))}
         </ul>
-        <p className="mt-3 text-slate-500">Please upload the correct template.</p>
+        <p className="mt-3 text-slate-500">{t('export.schoolManagement.missingColumnsNote')}</p>
       </AlertPopup>
 
       <AlertPopup
         isOpen={Boolean(genericErrorPopup)}
         onClose={() => setGenericErrorPopup(null)}
         variant="error"
-        title="Upload Failed"
+        title={t('export.schoolManagement.uploadFailedTitle')}
       >
         {genericErrorPopup}
       </AlertPopup>
@@ -252,24 +245,25 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
         isOpen={Boolean(singlePopup)}
         onClose={() => setSinglePopup(null)}
         variant={singlePopup?.variant}
-        title={singlePopup?.title}
+        title={singlePopup?.titleKey ? t(singlePopup.titleKey) : ''}
       >
         {singlePopup?.result && singlePopup.variant === 'success' && (
           <>
             <p>
-              <span className="font-medium text-slate-800">School Name:</span>{' '}
+              <span className="font-medium text-slate-800">{t('export.schoolManagement.registeredSchoolName')}</span>{' '}
               {singlePopup.result.schoolName}
             </p>
             <p className="mt-1">
-              <span className="font-medium text-slate-800">UDISE:</span> {singlePopup.result.udise}
+              <span className="font-medium text-slate-800">{t('export.schoolManagement.registeredUdise')}</span>{' '}
+              {singlePopup.result.udise}
             </p>
-            <p className="mt-3">The school has been added successfully.</p>
+            <p className="mt-3">{t('export.schoolManagement.registeredSuccessNote')}</p>
           </>
         )}
         {singlePopup?.result && singlePopup.variant === 'error' && (
           <>
-            <p>This UDISE is already registered.</p>
-            <p className="mt-3">Please delete the existing school first before uploading it again.</p>
+            <p>{t('export.schoolManagement.duplicateNote')}</p>
+            <p className="mt-3">{t('export.schoolManagement.duplicateHint')}</p>
           </>
         )}
         {singlePopup?.result && singlePopup.variant === 'warning' && <p>{singlePopup.result.message}</p>}

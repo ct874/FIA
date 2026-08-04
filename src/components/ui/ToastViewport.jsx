@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom'
+import { useLanguage } from '../../hooks/useLanguage'
 
 function CheckIcon({ className }) {
   return (
@@ -55,6 +56,8 @@ function CloseIcon({ className = 'h-4 w-4' }) {
 }
 
 export default function ToastViewport({ toasts, onDismiss }) {
+  const { t } = useLanguage()
+
   return createPortal(
     <div
       aria-live="polite"
@@ -76,7 +79,7 @@ export default function ToastViewport({ toasts, onDismiss }) {
               type="button"
               onClick={() => onDismiss(toast.id)}
               className="flex-none rounded-lg p-1 text-slate-400 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-600"
-              aria-label="Dismiss notification"
+              aria-label={t('common.dismissNotification')}
             >
               <CloseIcon />
             </button>

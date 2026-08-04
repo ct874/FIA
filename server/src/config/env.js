@@ -10,12 +10,29 @@ for (const key of requiredVars) {
   }
 }
 
+// Local dev frontends are always allowed, on top of whatever production
+// origin(s) CLIENT_ORIGIN configures — so the same deployed backend works
+// against both without ever needing an env change per environment.
+const LOCAL_DEV_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:5000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5000',
+]
+
+// A browser's Origin header is always scheme+host+port, never a trailing
+// slash — normalize away any trailing slash so a value like
+// "https://fia-nu.vercel.app/" (easy to paste by mistake into an env var)
+// still matches the real "https://fia-nu.vercel.app" the browser sends.
+const configuredOrigins = (process.env.CLIENT_ORIGIN || 'https://fia-nu.vercel.app')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean)
+
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT) || 5000,
-  clientOrigins: (process.env.CLIENT_ORIGIN || 'https://fia-nu.vercel.app/')
-    .split(',')
-    .map((origin) => origin.trim()),
+  clientOrigins: Array.from(new Set([...configuredOrigins, ...LOCAL_DEV_ORIGINS])),
   mongoUri: process.env.MONGO_URI,
   jwt: {
     secret: process.env.JWT_SECRET,

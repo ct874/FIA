@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useLanguage } from '../../hooks/useLanguage'
 
 export default function PasswordInput({ id, label, error, className = '', ...rest }) {
+  const { t } = useLanguage()
   const [isVisible, setIsVisible] = useState(false)
 
   return (
@@ -29,7 +31,7 @@ export default function PasswordInput({ id, label, error, className = '', ...res
           type="button"
           onClick={() => setIsVisible((prev) => !prev)}
           className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 transition-colors hover:text-slate-600"
-          aria-label={isVisible ? 'Hide password' : 'Show password'}
+          aria-label={isVisible ? t('common.hidePassword') : t('common.showPassword')}
           tabIndex={-1}
         >
           {isVisible ? (

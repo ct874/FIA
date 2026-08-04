@@ -51,26 +51,35 @@ export function computeOverviewSummary(schools, filters = {}) {
   const reachEntries = filteredSchools.flatMap((school) =>
     school.reach.filter((reach) => reachMatchesFilters(reach, filters)).map((reach) => ({ school, reach })),
   )
-  const studentRows = filteredSchools.flatMap((school) =>
-    school.studentFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)),
+  const studentEntries = filteredSchools.flatMap((school) =>
+    school.studentFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)).map((row) => ({ school, row })),
   )
-  const teacherRows = filteredSchools.flatMap((school) =>
-    school.teacherFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)),
+  const teacherEntries = filteredSchools.flatMap((school) =>
+    school.teacherFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)).map((row) => ({ school, row })),
   )
 
   const totalReach = reachEntries.reduce((sum, entry) => sum + entry.reach.uniqueStudentCount, 0)
 
-  const csatValues = studentRows.map((row) => row.enjoyment).filter((value) => value != null)
-  const itpValues = studentRows.map((row) => row.interestInFutureCareer).filter((value) => value != null)
+  const csatValues = studentEntries.map((entry) => entry.row.enjoyment).filter((value) => value != null)
+  const itpValues = studentEntries
+    .map((entry) => entry.row.interestInFutureCareer)
+    .filter((value) => value != null)
+
+  // "Total Schools" counts only schools that have actually logged into the
+  // Teacher Portal and submitted something (reach, student feedback, or
+  // teacher feedback) — a School record with no activity yet is just an
+  // unused login, not a participating school.
+  const activeSchoolIds = new Set([
+    ...reachEntries.map((entry) => entry.school.udise),
+    ...studentEntries.map((entry) => entry.school.udise),
+    ...teacherEntries.map((entry) => entry.school.udise),
+  ])
 
   return {
-    // Every registered school, not just ones with matching reach data — the
-    // Super Admin Dashboard's "Total Schools" must mirror the real School
-    // collection count exactly.
-    schoolsCount: filteredSchools.length,
+    schoolsCount: activeSchoolIds.size,
     totalReach,
-    studentResponses: studentRows.length,
-    teacherResponses: teacherRows.length,
+    studentResponses: studentEntries.length,
+    teacherResponses: teacherEntries.length,
     overallCsat: average(csatValues) ?? 0,
     overallItp: average(itpValues) ?? 0,
   }

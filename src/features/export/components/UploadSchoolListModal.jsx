@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import Modal from '../../../components/ui/Modal'
+import { useLanguage } from '../../../hooks/useLanguage'
 
 const ACCEPTED_EXTENSION = '.xlsx'
 const ACCEPTED_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -57,6 +58,7 @@ export default function UploadSchoolListModal({
   onConfirmUpload,
   lastUploadedSignature,
 }) {
+  const { t } = useLanguage()
   const [selectedFile, setSelectedFile] = useState(null)
   const [isDragActive, setIsDragActive] = useState(false)
   const fileInputRef = useRef(null)
@@ -103,10 +105,8 @@ export default function UploadSchoolListModal({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="md">
       <div className="p-6 sm:p-8">
-        <h3 className="text-xl font-semibold tracking-tight text-slate-900">Upload School List</h3>
-        <p className="mt-1.5 text-sm text-slate-500">
-          Upload an Excel (.xlsx) file containing the school information.
-        </p>
+        <h3 className="text-xl font-semibold tracking-tight text-slate-900">{t('export.uploadModal.title')}</h3>
+        <p className="mt-1.5 text-sm text-slate-500">{t('export.uploadModal.description')}</p>
 
         <div
           onDragOver={(event) => {
@@ -124,9 +124,10 @@ export default function UploadSchoolListModal({
             <>
               <UploadCloudIcon className="h-10 w-10 text-slate-400" />
               <p className="text-sm font-medium text-slate-700">
-                Drag &amp; drop your .xlsx file here, or <span className="text-blue-600 underline">browse</span>
+                {t('export.uploadModal.dropzoneHintPrefix')}{' '}
+                <span className="text-blue-600 underline">{t('export.uploadModal.browse')}</span>
               </p>
-              <p className="text-xs text-slate-400">Only .xlsx files are accepted</p>
+              <p className="text-xs text-slate-400">{t('export.uploadModal.onlyXlsx')}</p>
             </>
           ) : (
             <div className="flex w-full items-center justify-between gap-3 rounded-xl bg-white p-4 shadow-sm shadow-slate-900/5">
@@ -145,7 +146,7 @@ export default function UploadSchoolListModal({
                 }}
                 className="shrink-0 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors duration-150 hover:bg-slate-100"
               >
-                Remove
+                {t('export.uploadModal.remove')}
               </button>
             </div>
           )}
@@ -160,10 +161,7 @@ export default function UploadSchoolListModal({
         />
 
         {isRepeatFile && (
-          <p className="mt-3 text-xs font-medium text-amber-600">
-            You already uploaded a file with this exact name and size. Uploading again is safe —
-            already-registered schools are simply skipped.
-          </p>
+          <p className="mt-3 text-xs font-medium text-amber-600">{t('export.uploadModal.repeatFileWarning')}</p>
         )}
 
         <div className="mt-6 flex justify-end gap-3">
@@ -172,7 +170,7 @@ export default function UploadSchoolListModal({
             onClick={handleClose}
             className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors duration-150 hover:bg-slate-100"
           >
-            Cancel
+            {t('export.uploadModal.cancel')}
           </button>
           <button
             type="button"
@@ -182,7 +180,7 @@ export default function UploadSchoolListModal({
               transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-md hover:shadow-slate-900/20
               disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Upload
+            {t('export.uploadModal.upload')}
           </button>
         </div>
       </div>

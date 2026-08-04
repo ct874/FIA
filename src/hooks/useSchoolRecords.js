@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchSchoolRecords } from '../services/schoolData.service'
 import { getApiErrorMessage } from '../utils/apiErrorMessage'
 import { SCHOOL_DATA_CHANGED_EVENT } from '../utils/constants'
+import { useLanguage } from './useLanguage'
 
 // Background polling picks up changes made outside this browser tab (a
 // teacher submitting feedback, another admin tab uploading schools) without
@@ -9,6 +10,7 @@ import { SCHOOL_DATA_CHANGED_EVENT } from '../utils/constants'
 const POLL_INTERVAL_MS = 20000
 
 export function useSchoolRecords() {
+  const { t } = useLanguage()
   const [schools, setSchools] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -28,12 +30,12 @@ export function useSchoolRecords() {
       })
       .catch((err) => {
         if (!isMountedRef.current || !reportBusy) return
-        setError(getApiErrorMessage(err, 'Could not load school data.'))
+        setError(getApiErrorMessage(err, t('home.couldNotLoad')))
       })
       .finally(() => {
         if (isMountedRef.current && reportBusy) setIsLoading(false)
       })
-  }, [])
+  }, [t])
 
   useEffect(() => {
     isMountedRef.current = true

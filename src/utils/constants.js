@@ -11,7 +11,6 @@ export const TEACHER_ROUTES = {
   FEEDBACK: '/teacher/feedback',
   REACH_DATA: '/teacher/reach-data',
   STUDENT_FEEDBACK: '/teacher/student-feedback',
-  RESPONSES: '/teacher/responses',
 }
 
 export const API_BASE_URL =

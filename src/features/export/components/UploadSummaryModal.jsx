@@ -2,21 +2,14 @@ import { useMemo, useState } from 'react'
 import Modal from '../../../components/ui/Modal'
 import DashboardTable from '../../../components/table/DashboardTable'
 import { downloadUploadReport } from '../utils/uploadReport'
+import { useLanguage } from '../../../hooks/useLanguage'
 
-const FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'registered', label: 'Registered' },
-  { key: 'duplicate', label: 'Already Registered' },
-  { key: 'invalid', label: 'Invalid' },
-]
-
-const STATUS_PILL = {
-  registered: { label: '✅ Registered', className: 'bg-green-50 text-green-700 border-green-200' },
-  duplicate: { label: '❌ Already Exists', className: 'bg-red-50 text-red-700 border-red-200' },
-  invalid: { label: '⚠ Invalid Row', className: 'bg-orange-50 text-orange-700 border-orange-200' },
-}
-
-function StatusPill({ status }) {
+function StatusPill({ status, t }) {
+  const STATUS_PILL = {
+    registered: { label: t('export.summaryModal.statusLabels.registered'), className: 'bg-green-50 text-green-700 border-green-200' },
+    duplicate: { label: t('export.summaryModal.statusLabels.duplicate'), className: 'bg-red-50 text-red-700 border-red-200' },
+    invalid: { label: t('export.summaryModal.statusLabels.invalid'), className: 'bg-orange-50 text-orange-700 border-orange-200' },
+  }
   const pill = STATUS_PILL[status] || { label: status, className: 'bg-slate-100 text-slate-500 border-slate-200' }
   return (
     <span
@@ -39,17 +32,25 @@ function StatCard({ icon, label, value, accentClassName }) {
   )
 }
 
-const COLUMNS = [
-  { key: 'status', label: 'Status', render: (row) => <StatusPill status={row.status} /> },
-  { key: 'udise', label: 'UDISE' },
-  { key: 'schoolName', label: 'School Name', wrap: true },
-  { key: 'district', label: 'District' },
-  { key: 'state', label: 'State' },
-  { key: 'message', label: 'Message', wrap: true, wrapWidthClassName: 'w-48' },
-]
-
 export default function UploadSummaryModal({ isOpen, onClose, summary }) {
+  const { t } = useLanguage()
   const [activeFilter, setActiveFilter] = useState('all')
+
+  const filters = [
+    { key: 'all', label: t('export.summaryModal.filters.all') },
+    { key: 'registered', label: t('export.summaryModal.filters.registered') },
+    { key: 'duplicate', label: t('export.summaryModal.filters.duplicate') },
+    { key: 'invalid', label: t('export.summaryModal.filters.invalid') },
+  ]
+
+  const columns = [
+    { key: 'status', label: t('export.summaryModal.columns.status'), render: (row) => <StatusPill status={row.status} t={t} /> },
+    { key: 'udise', label: t('export.summaryModal.columns.udise') },
+    { key: 'schoolName', label: t('export.summaryModal.columns.schoolName'), wrap: true },
+    { key: 'district', label: t('export.summaryModal.columns.district') },
+    { key: 'state', label: t('export.summaryModal.columns.state') },
+    { key: 'message', label: t('export.summaryModal.columns.message'), wrap: true, wrapWidthClassName: 'w-48' },
+  ]
 
   const filteredResults = useMemo(() => {
     if (!summary) return []
@@ -62,26 +63,31 @@ export default function UploadSummaryModal({ isOpen, onClose, summary }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xl">
       <div className="p-6 sm:p-8">
-        <h3 className="text-xl font-semibold tracking-tight text-slate-900">Upload Summary</h3>
-        <p className="mt-1.5 text-sm text-slate-500">Here's what happened with your uploaded file.</p>
+        <h3 className="text-xl font-semibold tracking-tight text-slate-900">{t('export.summaryModal.title')}</h3>
+        <p className="mt-1.5 text-sm text-slate-500">{t('export.summaryModal.subtitle')}</p>
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard icon="📄" label="Total Records" value={summary.total} accentClassName="border-slate-200" />
+          <StatCard
+            icon="📄"
+            label={t('export.summaryModal.totalRecords')}
+            value={summary.total}
+            accentClassName="border-slate-200"
+          />
           <StatCard
             icon="✅"
-            label="Successfully Registered"
+            label={t('export.summaryModal.successfullyRegistered')}
             value={summary.success}
             accentClassName="border-t-4 border-t-green-400 border-slate-200"
           />
           <StatCard
             icon="❌"
-            label="Already Registered"
+            label={t('export.summaryModal.alreadyRegistered')}
             value={summary.duplicates}
             accentClassName="border-t-4 border-t-red-400 border-slate-200"
           />
           <StatCard
             icon="⚠"
-            label="Invalid Rows"
+            label={t('export.summaryModal.invalidRows')}
             value={summary.invalid}
             accentClassName="border-t-4 border-t-orange-400 border-slate-200"
           />
@@ -89,7 +95,7 @@ export default function UploadSummaryModal({ isOpen, onClose, summary }) {
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
-            {FILTERS.map((filter) => (
+            {filters.map((filter) => (
               <button
                 key={filter.key}
                 type="button"
@@ -111,17 +117,17 @@ export default function UploadSummaryModal({ isOpen, onClose, summary }) {
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700
               transition-all duration-200 ease-out hover:bg-slate-100"
           >
-            Download Report
+            {t('export.summaryModal.downloadReport')}
           </button>
         </div>
 
         <div className="mt-4">
           <DashboardTable
-            columns={COLUMNS}
+            columns={columns}
             data={filteredResults}
             searchKeys={['schoolName', 'udise', 'district']}
-            searchPlaceholder="Search by school name, UDISE or district..."
-            emptyMessage="No rows match this filter."
+            searchPlaceholder={t('export.summaryModal.searchPlaceholder')}
+            emptyMessage={t('export.summaryModal.emptyFilter')}
             fluid
           />
         </div>

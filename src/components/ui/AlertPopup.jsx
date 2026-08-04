@@ -1,4 +1,5 @@
 import Modal from './Modal'
+import { useLanguage } from '../../hooks/useLanguage'
 
 function CheckIcon({ className }) {
   return (
@@ -42,8 +43,9 @@ export default function AlertPopup({
   variant = 'success',
   title,
   children,
-  primaryLabel = 'Close',
+  primaryLabel,
 }) {
+  const { t } = useLanguage()
   const { headerBg, iconBg, iconColor, Icon } = VARIANTS[variant] || VARIANTS.success
 
   return (
@@ -63,7 +65,7 @@ export default function AlertPopup({
           onClick={onClose}
           className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-md hover:shadow-slate-900/20"
         >
-          {primaryLabel}
+          {primaryLabel || t('common.close')}
         </button>
       </div>
     </Modal>

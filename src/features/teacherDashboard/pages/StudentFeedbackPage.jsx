@@ -5,11 +5,13 @@ import GradeFeedbackCard from '../components/GradeFeedbackCard'
 import BatchFeedbackWorkspace from '../components/BatchFeedbackWorkspace'
 import { useTeacherStatus } from '../../../hooks/useTeacherStatus'
 import { useToast } from '../../../hooks/useToast'
+import { useLanguage } from '../../../hooks/useLanguage'
 import { fetchStudentFeedbackSummary, submitStudentFeedback } from '../../../api/studentFeedback.api'
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 
 export default function StudentFeedbackPage() {
   const toast = useToast()
+  const { t } = useLanguage()
   const { status, refetchStatus } = useTeacherStatus()
 
   const [grades, setGrades] = useState([])
@@ -29,7 +31,7 @@ export default function StudentFeedbackPage() {
       try {
         await loadSummary()
       } catch (error) {
-        if (isMounted) toast.error(getApiErrorMessage(error, 'Could not load Student Feedback data.'))
+        if (isMounted) toast.error(getApiErrorMessage(error, t('studentFeedback.couldNotLoad')))
       } finally {
         if (isMounted) setIsLoading(false)
       }
@@ -49,12 +51,15 @@ export default function StudentFeedbackPage() {
       const failures = results.filter((result) => result.status === 'rejected')
 
       if (failures.length === 0) {
-        toast.success('Feedback Submitted Successfully')
+        toast.success(t('studentFeedback.submitSuccess'))
       } else {
         toast.error(
           getApiErrorMessage(
             failures[0].reason,
-            `${payloads.length - failures.length} of ${payloads.length} responses saved; some failed.`,
+            t('studentFeedback.partialFailure', {
+              success: payloads.length - failures.length,
+              total: payloads.length,
+            }),
           ),
         )
       }
@@ -62,7 +67,7 @@ export default function StudentFeedbackPage() {
       setActiveGrade(null)
       await Promise.all([loadSummary(), refetchStatus()])
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Could not submit feedback.'))
+      toast.error(getApiErrorMessage(error, t('studentFeedback.couldNotSubmit')))
     } finally {
       setIsSubmitting(false)
     }
@@ -90,7 +95,7 @@ export default function StudentFeedbackPage() {
       ) : (
         <>
           <div className="mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Student Feedback</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{t('studentFeedback.title')}</h1>
           </div>
 
           {isLoading ? (
@@ -100,9 +105,7 @@ export default function StudentFeedbackPage() {
               ))}
             </div>
           ) : grades.length === 0 ? (
-            <p className="text-sm text-slate-500">
-              No Student Reach data found yet. Add reach data first to start collecting feedback.
-            </p>
+            <p className="text-sm text-slate-500">{t('studentFeedback.noReachData')}</p>
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {grades.map((grade) => (

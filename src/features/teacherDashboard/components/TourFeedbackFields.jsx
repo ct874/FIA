@@ -1,13 +1,16 @@
 import Select from '../../../components/ui/Select'
 import RatingScale from '../../../components/ui/RatingScale'
 import TextArea from '../../../components/ui/TextArea'
-
-const LANGUAGE_OPTIONS = [
-  { value: 'Hindi', label: 'Hindi' },
-  { value: 'English', label: 'English' },
-]
+import { useLanguage } from '../../../hooks/useLanguage'
 
 export default function TourFeedbackFields({ tour, value, onChange, errors = {} }) {
+  const { t } = useLanguage()
+
+  const LANGUAGE_OPTIONS = [
+    { value: 'Hindi', label: 'Hindi' },
+    { value: 'English', label: 'English' },
+  ]
+
   const setField = (field) => (fieldValue) => {
     onChange({ ...value, [field]: fieldValue })
   }
@@ -18,8 +21,8 @@ export default function TourFeedbackFields({ tour, value, onChange, errors = {} 
 
       <Select
         id={`${tour.tourId}-language`}
-        label="In which language did you watch the Career Tour?"
-        placeholder="Select a language"
+        label={t('tourFeedbackFields.languageQuestion')}
+        placeholder={t('tourFeedbackFields.languagePlaceholder')}
         options={LANGUAGE_OPTIONS}
         value={value.language || ''}
         onChange={(event) => setField('language')(event.target.value)}
@@ -27,7 +30,7 @@ export default function TourFeedbackFields({ tour, value, onChange, errors = {} 
       />
 
       <RatingScale
-        label="How likely are you to recommend this tour to other teachers? (0 = Not at all likely, 10 = Extremely likely)"
+        label={t('tourFeedbackFields.recommendQuestion')}
         min={0}
         max={10}
         value={value.recommendScore ?? null}
@@ -36,14 +39,14 @@ export default function TourFeedbackFields({ tour, value, onChange, errors = {} 
       />
 
       <RatingScale
-        label="How satisfied are you with the resources provided? (1 = Extremely dissatisfied, 5 = Extremely satisfied)"
+        label={t('tourFeedbackFields.satisfactionQuestion')}
         value={value.satisfactionResources ?? null}
         onChange={setField('satisfactionResources')}
         error={errors.satisfactionResources}
       />
 
       <RatingScale
-        label="How easy was it to integrate this tour into your lesson plan? (1 = Extremely difficult, 5 = Extremely easy)"
+        label={t('tourFeedbackFields.easeQuestion')}
         value={value.easeIntegration ?? null}
         onChange={setField('easeIntegration')}
         error={errors.easeIntegration}
@@ -51,14 +54,14 @@ export default function TourFeedbackFields({ tour, value, onChange, errors = {} 
 
       <TextArea
         id={`${tour.tourId}-biggestBenefit`}
-        label="What was the biggest benefit for your students from this tour?"
+        label={t('tourFeedbackFields.biggestBenefitQuestion')}
         value={value.biggestBenefit || ''}
         onChange={(event) => setField('biggestBenefit')(event.target.value)}
       />
 
       <TextArea
         id={`${tour.tourId}-improvements`}
-        label="What improvements would you suggest for future tours?"
+        label={t('tourFeedbackFields.improvementsQuestion')}
         value={value.improvements || ''}
         onChange={(event) => setField('improvements')(event.target.value)}
       />
