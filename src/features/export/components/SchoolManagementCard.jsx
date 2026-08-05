@@ -89,6 +89,8 @@ export default function SchoolManagementCard({ directoryVersion, onDirectoryChan
       setSinglePopup({ variant: 'success', titleKey: 'export.schoolManagement.registeredTitle', result })
     } else if (result.status === 'duplicate') {
       setSinglePopup({ variant: 'error', titleKey: 'export.schoolManagement.duplicateTitle', result })
+    } else if (result.status === 'invalid-udise') {
+      setSinglePopup({ variant: 'warning', titleKey: 'export.schoolManagement.invalidUdiseTitle', result })
     } else {
       setSinglePopup({ variant: 'warning', titleKey: 'export.schoolManagement.invalidTitle', result })
     }

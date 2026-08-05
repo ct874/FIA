@@ -3,6 +3,7 @@ import { StudentReach } from '../models/studentReach.model.js'
 import { StudentFeedback } from '../models/studentFeedback.model.js'
 import { TeacherFeedback } from '../models/teacherFeedback.model.js'
 import { getSchoolStatus, computeGradeFeedbackProgress } from './teacherStatus.service.js'
+import { computeSchoolOverallStatus } from './schoolStatus.service.js'
 
 function buildStudentFeedbackRows(doc) {
   return doc.tours.map((tourAnswer) => ({
@@ -76,6 +77,7 @@ export async function getSchoolsOverview() {
         state: school.state,
         createdAt: school.createdAt,
         status,
+        overallStatus: computeSchoolOverallStatus(status, gradeProgress),
         reach,
         studentFeedback: studentDocs.flatMap(buildStudentFeedbackRows),
         teacherFeedback: teacherDocs.map(buildTeacherFeedbackRow),

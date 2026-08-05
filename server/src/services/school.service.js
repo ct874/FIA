@@ -70,6 +70,28 @@ function missingFieldsMessage(missingFields) {
   return `Missing required data (${missingFields.join(', ')})`
 }
 
+// Ordered, independent checks — add another rule object here to extend
+// UDISE validation later without touching the calling code.
+const UDISE_FORMAT_RULES = [
+  {
+    isValid: (udise) => /^\d+$/.test(udise),
+    reason: 'UDISE must contain only numeric digits.',
+  },
+  {
+    isValid: (udise) => udise.length === 11,
+    reason: 'UDISE must contain exactly 11 digits.',
+  },
+  {
+    isValid: (udise) => udise.startsWith('0'),
+    reason: 'UDISE must start with 0.',
+  },
+]
+
+function validateUdiseFormat(udise) {
+  const failedRule = UDISE_FORMAT_RULES.find((rule) => !rule.isValid(udise))
+  return failedRule ? failedRule.reason : null
+}
+
 function rowSummary(row) {
   return {
     rowNumber: row.rowNumber,
@@ -93,6 +115,13 @@ export async function processSchoolListUpload(buffer) {
       results.push({ ...rowSummary(row), status: 'invalid', message: missingFieldsMessage(missingFields) })
       return
     }
+
+    const udiseFormatError = validateUdiseFormat(row.udise)
+    if (udiseFormatError) {
+      results.push({ ...rowSummary(row), status: 'invalid-udise', message: udiseFormatError })
+      return
+    }
+
     if (seenUdises.has(row.udise)) {
       results.push({ ...rowSummary(row), status: 'duplicate', message: 'Duplicate UDISE within this file' })
       return
@@ -154,6 +183,7 @@ export async function processSchoolListUpload(buffer) {
     total: parsedRows.length,
     success: results.filter((result) => result.status === 'registered').length,
     duplicates: results.filter((result) => result.status === 'duplicate').length,
+    invalidUdise: results.filter((result) => result.status === 'invalid-udise').length,
     invalid: results.filter((result) => result.status === 'invalid').length,
     results,
   }

@@ -117,16 +117,6 @@ function statusLabel(isDone, hasAnyActivity) {
   return hasAnyActivity ? 'In Progress' : 'Pending'
 }
 
-function overallStatusFrom(teacherFb, reachData, studentFb) {
-  if (teacherFb === 'Completed' && reachData === 'Completed' && studentFb === 'Completed') {
-    return 'Completed'
-  }
-  if (teacherFb === 'Pending' && reachData === 'Pending' && studentFb === 'Pending') {
-    return 'Not Started'
-  }
-  return 'In Progress'
-}
-
 function computeLastActivity(school) {
   const dates = [
     ...school.reach.map((reach) => reach.createdAt),
@@ -143,7 +133,10 @@ function computeLastActivity(school) {
 }
 
 /**
- * One row per school, for the "Registered Schools" table.
+ * One row per school, for the "Registered Schools" table. `overallStatus`
+ * (Not Started / Pending / Completed) is calculated once, server-side, by
+ * computeSchoolOverallStatus() — this just passes it through so every page
+ * that renders a school's status agrees with every other one.
  */
 export function computeRegisteredRows(schools) {
   return schools.map((school) => {
@@ -159,7 +152,7 @@ export function computeRegisteredRows(schools) {
       teacherFb,
       reachData,
       studentFb,
-      overallStatus: overallStatusFrom(teacherFb, reachData, studentFb),
+      overallStatus: school.overallStatus,
       lastActivity: computeLastActivity(school),
     }
   })

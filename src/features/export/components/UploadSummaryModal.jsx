@@ -8,6 +8,7 @@ function StatusPill({ status, t }) {
   const STATUS_PILL = {
     registered: { label: t('export.summaryModal.statusLabels.registered'), className: 'bg-green-50 text-green-700 border-green-200' },
     duplicate: { label: t('export.summaryModal.statusLabels.duplicate'), className: 'bg-red-50 text-red-700 border-red-200' },
+    'invalid-udise': { label: t('export.summaryModal.statusLabels.invalidUdise'), className: 'bg-amber-50 text-amber-700 border-amber-200' },
     invalid: { label: t('export.summaryModal.statusLabels.invalid'), className: 'bg-orange-50 text-orange-700 border-orange-200' },
   }
   const pill = STATUS_PILL[status] || { label: status, className: 'bg-slate-100 text-slate-500 border-slate-200' }
@@ -40,6 +41,7 @@ export default function UploadSummaryModal({ isOpen, onClose, summary }) {
     { key: 'all', label: t('export.summaryModal.filters.all') },
     { key: 'registered', label: t('export.summaryModal.filters.registered') },
     { key: 'duplicate', label: t('export.summaryModal.filters.duplicate') },
+    { key: 'invalid-udise', label: t('export.summaryModal.filters.invalidUdise') },
     { key: 'invalid', label: t('export.summaryModal.filters.invalid') },
   ]
 
@@ -66,7 +68,7 @@ export default function UploadSummaryModal({ isOpen, onClose, summary }) {
         <h3 className="text-xl font-semibold tracking-tight text-slate-900">{t('export.summaryModal.title')}</h3>
         <p className="mt-1.5 text-sm text-slate-500">{t('export.summaryModal.subtitle')}</p>
 
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <StatCard
             icon="📄"
             label={t('export.summaryModal.totalRecords')}
@@ -84,6 +86,12 @@ export default function UploadSummaryModal({ isOpen, onClose, summary }) {
             label={t('export.summaryModal.alreadyRegistered')}
             value={summary.duplicates}
             accentClassName="border-t-4 border-t-red-400 border-slate-200"
+          />
+          <StatCard
+            icon="⚠"
+            label={t('export.summaryModal.invalidUdiseRows')}
+            value={summary.invalidUdise ?? 0}
+            accentClassName="border-t-4 border-t-amber-400 border-slate-200"
           />
           <StatCard
             icon="⚠"

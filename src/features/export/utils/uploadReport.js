@@ -3,7 +3,8 @@ import * as XLSX from 'xlsx'
 const STATUS_LABELS = {
   registered: 'Registered',
   duplicate: 'Already Registered',
-  invalid: 'Invalid',
+  'invalid-udise': 'Invalid UDISE',
+  invalid: 'Invalid Data',
 }
 
 export function downloadUploadReport(results) {
