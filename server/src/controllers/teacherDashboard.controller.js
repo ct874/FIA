@@ -1,4 +1,4 @@
-import { TOURS } from '../constants/tours.js'
+import { ENABLED_TOURS } from '../constants/tours.js'
 import { GRADES, LANGUAGES } from '../constants/grades.js'
 import { getSchoolStatus, getDashboardOverview } from '../services/teacherStatus.service.js'
 import { getSchoolById } from '../services/teacherAuth.service.js'
@@ -8,7 +8,7 @@ import { sendSuccess } from '../utils/ApiResponse.js'
 export const getMeta = asyncHandler(async (_req, res) => {
   sendSuccess(res, {
     message: 'Meta fetched',
-    data: { tours: TOURS, grades: GRADES, languages: LANGUAGES },
+    data: { tours: ENABLED_TOURS, grades: GRADES, languages: LANGUAGES },
   })
 })
 

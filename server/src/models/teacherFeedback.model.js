@@ -1,5 +1,7 @@
 import mongoose from 'mongoose'
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 const teacherFeedbackSchema = new mongoose.Schema(
   {
     school: { type: mongoose.Schema.Types.ObjectId, ref: 'School', required: true },
@@ -8,10 +10,21 @@ const teacherFeedbackSchema = new mongoose.Schema(
 
     tourId: { type: String, required: true },
     tourName: { type: String, required: true },
-    language: { type: String, trim: true },
+    language: { type: String, required: true, trim: true },
 
     submittedBy: { type: String, required: true, trim: true },
     contactNumber: { type: String, trim: true },
+    // Required going forward, but intentionally NOT backfilled onto older
+    // documents — those keep working with `email` simply absent/undefined,
+    // and reports show it blank for them. `required`/`match` only apply on
+    // new writes, never retroactively to already-stored records.
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      match: [EMAIL_PATTERN, 'Please enter a valid email address.'],
+    },
 
     month: { type: String, required: true },
     financialYear: { type: String, required: true },
@@ -37,6 +50,7 @@ teacherFeedbackSchema.methods.toSafeJSON = function toSafeJSON() {
     language: this.language,
     submittedBy: this.submittedBy,
     contactNumber: this.contactNumber,
+    email: this.email,
     month: this.month,
     financialYear: this.financialYear,
     recommendScore: this.recommendScore,

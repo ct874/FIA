@@ -2,16 +2,39 @@ import { TeacherFeedback } from '../models/teacherFeedback.model.js'
 import { TOUR_BY_ID, TOUR_IDS } from '../constants/tours.js'
 import { getCurrentMonthName, getCurrentFinancialYear } from '../utils/academicPeriod.js'
 import { ApiError } from '../utils/ApiError.js'
+import { sortByFeedbackHierarchy } from '../utils/feedbackSort.js'
 
-export async function listTeacherFeedback(schoolId) {
-  const docs = await TeacherFeedback.find({ school: schoolId }).sort({ createdAt: 1 })
-  return docs.map((doc) => doc.toSafeJSON())
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Trims, lowercases, and validates the format — never trust the frontend's
+// own check alone for a field the export/report layer also relies on.
+function normalizeEmail(email) {
+  const trimmed = String(email ?? '').trim().toLowerCase()
+  if (!trimmed || !EMAIL_PATTERN.test(trimmed)) {
+    throw new ApiError(400, 'Please enter a valid email address.')
+  }
+  return trimmed
 }
 
-export async function submitTeacherFeedback(school, { submittedBy, contactNumber, tours }) {
+export async function listTeacherFeedback(schoolId) {
+  const docs = await TeacherFeedback.find({ school: schoolId })
+  // Single-school query, so "School" is constant here — this enforces the
+  // Teacher -> Career Tour part of the required hierarchy.
+  const sorted = sortByFeedbackHierarchy(docs, (doc) => ({
+    schoolName: doc.schoolName,
+    grade: null,
+    type: 'Teacher',
+    identifier: doc.email || doc.submittedBy,
+    tourId: doc.tourId,
+  }))
+  return sorted.map((doc) => doc.toSafeJSON())
+}
+
+export async function submitTeacherFeedback(school, { submittedBy, contactNumber, email, tours }) {
   if (!submittedBy || !String(submittedBy).trim()) {
     throw new ApiError(400, 'Your name is required.')
   }
+  const normalizedEmail = normalizeEmail(email)
   if (!Array.isArray(tours) || tours.length !== TOUR_IDS.length) {
     throw new ApiError(400, `Feedback for all ${TOUR_IDS.length} Career Tours is required.`)
   }
@@ -38,6 +61,7 @@ export async function submitTeacherFeedback(school, { submittedBy, contactNumber
       language: tourAnswer.language,
       submittedBy: String(submittedBy).trim(),
       contactNumber: contactNumber ? String(contactNumber).trim() : '',
+      email: normalizedEmail,
       month,
       financialYear,
       recommendScore: tourAnswer.recommendScore,

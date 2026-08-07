@@ -7,6 +7,10 @@ const SIZE_CLASSES = {
   md: 'max-w-lg',
   lg: 'max-w-3xl',
   xl: 'max-w-5xl',
+  // Near full-viewport overlay for multi-step workflows (e.g. the Target
+  // Management screen) — same dim backdrop/animation as every other size,
+  // just occupying most of the screen instead of a centered dialog.
+  full: 'max-w-6xl',
 }
 
 function CloseIcon({ className = 'h-5 w-5' }) {

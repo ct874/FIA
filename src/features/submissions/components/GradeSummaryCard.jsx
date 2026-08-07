@@ -22,7 +22,7 @@ export default function GradeSummaryCard({ card }) {
           label={t('submissions.gradeCard.feedbackSubmitted')}
           value={card.totalSubmitted.toLocaleString()}
         />
-        <StatCell label={t('submissions.gradeCard.totalReach')} value={card.totalReach.toLocaleString()} />
+        <StatCell label={t('submissions.gradeCard.remaining')} value={card.totalRemaining.toLocaleString()} />
         <StatCell label={t('submissions.gradeCard.completion')} value={`${card.completionPercentage}%`} />
       </div>
 

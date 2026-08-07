@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TextInput from '../../../components/ui/TextInput'
 import Button from '../../../components/ui/Button'
 import Skeleton from '../../../components/ui/Skeleton'
 import WorkflowStepper from '../../../components/ui/WorkflowStepper'
+import FeedbackProgressBar from '../../../components/ui/FeedbackProgressBar'
 import TourFeedbackFields from '../components/TourFeedbackFields'
 import { useTeacherStatus } from '../../../hooks/useTeacherStatus'
 import { useToast } from '../../../hooks/useToast'
@@ -12,13 +13,26 @@ import { fetchTeacherFeedback, submitTeacherFeedback } from '../../../api/teache
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { TEACHER_ROUTES } from '../../../utils/constants'
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// The 5 mandatory questions per Career Tour (matches the official Form 4
+// spec) — Career Tour language is a separate, always-required field and
+// intentionally not counted here, mirroring how Student Feedback's own
+// progress bar (BatchFeedbackWorkspace) never counts language either.
+const QUESTION_KEYS = ['recommendScore', 'satisfactionResources', 'easeIntegration', 'biggestBenefit', 'improvements']
+
+function isQuestionAnswered(value) {
+  if (typeof value === 'string') return value.trim() !== ''
+  return value !== undefined && value !== null
+}
+
 function npsLabelKey(score) {
   if (score >= 9) return 'teacherFeedback.nps.promoter'
   if (score >= 7) return 'teacherFeedback.nps.passive'
   return 'teacherFeedback.nps.detractor'
 }
 
-function SubmittedSummary({ submissions, status, t }) {
+function SubmittedSummary({ submissions, t }) {
   const navigate = useNavigate()
   const first = submissions[0]
 
@@ -43,6 +57,11 @@ function SubmittedSummary({ submissions, status, t }) {
                 <span className="font-semibold text-amber-300">{t('teacherFeedback.contact')}</span> {first.contactNumber}
               </p>
             )}
+            {first.email && (
+              <p className="mt-1">
+                <span className="font-semibold text-amber-300">{t('teacherFeedback.email')}</span> {first.email}
+              </p>
+            )}
             <p className="mt-1">
               <span className="font-semibold text-amber-300">{t('teacherFeedback.month')}</span> {first.month}
             </p>
@@ -50,14 +69,7 @@ function SubmittedSummary({ submissions, status, t }) {
         )}
 
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button className="w-auto! px-6" onClick={() => navigate(TEACHER_ROUTES.REACH_DATA)}>
-            {t('teacherFeedback.goToReach')}
-          </Button>
-          <Button
-            className="w-auto! bg-white/10 px-6 hover:bg-white/20"
-            disabled={!status.reachSubmitted}
-            onClick={() => navigate(TEACHER_ROUTES.STUDENT_FEEDBACK)}
-          >
+          <Button className="w-auto! px-6" onClick={() => navigate(TEACHER_ROUTES.STUDENT_FEEDBACK)}>
             {t('teacherFeedback.goToStudentFeedback')}
           </Button>
         </div>
@@ -121,6 +133,7 @@ export default function TeacherFeedbackPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [submittedBy, setSubmittedBy] = useState('')
   const [contactNumber, setContactNumber] = useState('')
+  const [email, setEmail] = useState('')
   const [answers, setAnswers] = useState({})
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -152,33 +165,64 @@ export default function TeacherFeedbackPage() {
     const nextErrors = { tours: {} }
     if (!submittedBy.trim()) nextErrors.submittedBy = t('teacherFeedback.nameRequired')
 
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail) {
+      nextErrors.email = t('teacherFeedback.emailRequired')
+    } else if (!EMAIL_PATTERN.test(trimmedEmail)) {
+      nextErrors.email = t('teacherFeedback.emailInvalid')
+    }
+
     meta.tours.forEach((tour) => {
       const value = answers[tour.tourId] || {}
       const tourErrors = {}
       if (!value.language) tourErrors.language = t('teacherFeedback.required')
-      if (value.recommendScore === undefined || value.recommendScore === null) {
-        tourErrors.recommendScore = t('teacherFeedback.required')
-      }
-      if (!value.satisfactionResources) tourErrors.satisfactionResources = t('teacherFeedback.required')
-      if (!value.easeIntegration) tourErrors.easeIntegration = t('teacherFeedback.required')
+      QUESTION_KEYS.forEach((key) => {
+        if (!isQuestionAnswered(value[key])) tourErrors[key] = t('teacherFeedback.required')
+      })
       if (Object.keys(tourErrors).length > 0) nextErrors.tours[tour.tourId] = tourErrors
     })
 
     return nextErrors
   }
 
+  // Recomputed on every keystroke/answer so the Submit button can be
+  // disabled in real time — the same "never allow partial submission"
+  // guarantee validate() gives on submit, just evaluated live instead of
+  // only after a submit attempt.
+  const liveErrors = useMemo(
+    () => validate(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [submittedBy, email, answers, meta.tours],
+  )
+  const hasLiveTourErrors = Object.values(liveErrors.tours).some((tourErrors) => Object.keys(tourErrors).length > 0)
+  const isFormComplete = !liveErrors.submittedBy && !liveErrors.email && !hasLiveTourErrors
+
+  const { filledCount, totalCount, progressPercent } = useMemo(() => {
+    const total = meta.tours.length * QUESTION_KEYS.length
+    const filled = meta.tours.reduce((sum, tour) => {
+      const value = answers[tour.tourId] || {}
+      return sum + QUESTION_KEYS.filter((key) => isQuestionAnswered(value[key])).length
+    }, 0)
+    return {
+      filledCount: filled,
+      totalCount: total,
+      progressPercent: total === 0 ? 0 : Math.round((filled / total) * 100),
+    }
+  }, [answers, meta.tours])
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     const nextErrors = validate()
     const hasTourErrors = Object.values(nextErrors.tours).some((e) => Object.keys(e).length > 0)
     setErrors(nextErrors)
-    if (nextErrors.submittedBy || hasTourErrors) return
+    if (nextErrors.submittedBy || nextErrors.email || hasTourErrors) return
 
     setIsSubmitting(true)
     try {
       const payload = {
         submittedBy: submittedBy.trim(),
         contactNumber: contactNumber.trim(),
+        email: email.trim().toLowerCase(),
         tours: meta.tours.map((tour) => ({ tourId: tour.tourId, ...answers[tour.tourId] })),
       }
       const { data } = await submitTeacherFeedback(payload)
@@ -206,14 +250,14 @@ export default function TeacherFeedbackPage() {
           <Skeleton className="h-32" />
         </div>
       ) : alreadySubmitted ? (
-        <SubmittedSummary submissions={submissions} status={status} t={t} />
+        <SubmittedSummary submissions={submissions} t={t} />
       ) : (
         <form
           onSubmit={handleSubmit}
           noValidate
           className="space-y-6 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8"
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <TextInput
               id="submittedBy"
               label={t('teacherFeedback.yourNameLabel')}
@@ -229,6 +273,15 @@ export default function TeacherFeedbackPage() {
               value={contactNumber}
               onChange={(event) => setContactNumber(event.target.value)}
             />
+            <TextInput
+              id="email"
+              type="email"
+              label={t('teacherFeedback.emailLabel')}
+              placeholder={t('teacherFeedback.emailPlaceholder')}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              error={errors.email}
+            />
           </div>
 
           {meta.tours.map((tour) => (
@@ -238,10 +291,18 @@ export default function TeacherFeedbackPage() {
               value={answers[tour.tourId] || {}}
               onChange={(next) => setAnswers((prev) => ({ ...prev, [tour.tourId]: next }))}
               errors={errors.tours?.[tour.tourId] || {}}
+              languages={meta.languages}
             />
           ))}
 
-          <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
+          <div>
+            <FeedbackProgressBar
+              label={t('studentFeedback.answeredCount', { filled: filledCount, total: totalCount })}
+              percent={progressPercent}
+            />
+          </div>
+
+          <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting || !isFormComplete}>
             {isSubmitting ? t('teacherFeedback.submitting') : t('teacherFeedback.submit')}
           </Button>
         </form>

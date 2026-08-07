@@ -1,5 +1,7 @@
 import { TeacherFeedback } from '../models/teacherFeedback.model.js'
 import { StudentFeedback } from '../models/studentFeedback.model.js'
+import { countUniqueTeacherResponses } from '../utils/teacherResponseCount.js'
+import { sortByFeedbackHierarchy } from '../utils/feedbackSort.js'
 
 function buildTeacherRows(teacherDocs) {
   return teacherDocs.map((doc) => ({
@@ -7,6 +9,8 @@ function buildTeacherRows(teacherDocs) {
     type: 'Teacher',
     school: doc.schoolName,
     tour: doc.tourName,
+    tourId: doc.tourId,
+    identifier: doc.email || doc.submittedBy,
     grade: null,
     month: doc.month,
     time: doc.createdAt,
@@ -22,6 +26,8 @@ function buildStudentRows(studentDocs) {
         type: 'Student',
         school: doc.schoolName,
         tour: tourAnswer.tourName,
+        tourId: tourAnswer.tourId,
+        identifier: doc.studentDummyId,
         grade: doc.grade,
         month: doc.month,
         time: doc.createdAt,
@@ -46,13 +52,19 @@ function computeTopGrade(studentDocs) {
 
 export async function getAllResponses(schoolId, { search = '', page = 1, limit = 100 } = {}) {
   const [teacherDocs, studentDocs] = await Promise.all([
-    TeacherFeedback.find({ school: schoolId }).sort({ createdAt: -1 }),
-    StudentFeedback.find({ school: schoolId }).sort({ createdAt: -1 }),
+    TeacherFeedback.find({ school: schoolId }),
+    StudentFeedback.find({ school: schoolId }),
   ])
 
-  const allRows = [...buildTeacherRows(teacherDocs), ...buildStudentRows(studentDocs)].sort(
-    (a, b) => new Date(b.time) - new Date(a.time),
-  )
+  // School -> Grade -> Student/Teacher -> Career Tour, per the required
+  // hierarchy (single-school query, so "School" is constant here).
+  const allRows = sortByFeedbackHierarchy([...buildTeacherRows(teacherDocs), ...buildStudentRows(studentDocs)], (row) => ({
+    schoolName: row.school,
+    grade: row.grade,
+    type: row.type,
+    identifier: row.identifier,
+    tourId: row.tourId,
+  }))
 
   const query = search.trim().toLowerCase()
   const filteredRows = query
@@ -73,7 +85,7 @@ export async function getAllResponses(schoolId, { search = '', page = 1, limit =
   return {
     summary: {
       totalStudentFeedback: studentDocs.length,
-      teacherResponses: teacherDocs.length,
+      teacherResponses: countUniqueTeacherResponses(teacherDocs),
       topGrade: computeTopGrade(studentDocs),
     },
     rows,

@@ -5,13 +5,12 @@ import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
 import { useLanguage } from '../../../hooks/useLanguage'
 import { loadProgrammeSetup } from '../utils/programmeSetup'
 import {
-  STUDENT_REACH_COLUMNS,
   FEEDBACK_COLUMNS,
   AFE_COLUMNS,
-  buildStudentReachRows,
   buildFeedbackRows,
   buildAfeRows,
   downloadCsv,
+  downloadWorkbook,
   isCellMissing,
 } from '../utils/exportFormats'
 import { getMonthlyCyclePresets, formatDateForInput, parseDateFromInput } from '../utils/dateRangeCycles'
@@ -53,7 +52,6 @@ export default function ExportPreviewCard({ directoryVersion }) {
   const [refreshKey, setRefreshKey] = useState(0)
 
   const TABS = [
-    { key: 'reach', label: t('export.exportPreview.tabs.reach') },
     { key: 'studentFeedback', label: t('export.exportPreview.tabs.studentFeedback') },
     { key: 'teacherFeedback', label: t('export.exportPreview.tabs.teacherFeedback') },
     { key: 'afe', label: t('export.exportPreview.tabs.afe') },
@@ -67,9 +65,8 @@ export default function ExportPreviewCard({ directoryVersion }) {
   const presets = useMemo(() => getMonthlyCyclePresets(6), [])
 
   const rowsByTab = useMemo(() => {
-    if (isLoading) return { reach: [], studentFeedback: [], teacherFeedback: [], afe: [] }
+    if (isLoading) return { studentFeedback: [], teacherFeedback: [], afe: [] }
     return {
-      reach: buildStudentReachRows(schools, setup, range),
       studentFeedback: buildFeedbackRows(schools, setup, 'student', range),
       teacherFeedback: buildFeedbackRows(schools, setup, 'teacher', range),
       afe: buildAfeRows(schools, setup, range),
@@ -78,7 +75,6 @@ export default function ExportPreviewCard({ directoryVersion }) {
   }, [schools, setup, range, refreshKey, isLoading])
 
   const columnsByTab = {
-    reach: STUDENT_REACH_COLUMNS,
     studentFeedback: FEEDBACK_COLUMNS,
     teacherFeedback: FEEDBACK_COLUMNS,
     afe: AFE_COLUMNS,
@@ -92,11 +88,14 @@ export default function ExportPreviewCard({ directoryVersion }) {
     downloadCsv(`${filenamePrefix}.csv`, columns, rowsByTab[key])
   }
 
-  const handleDownloadAll = () => {
-    handleDownload('reach', STUDENT_REACH_COLUMNS, 'fia-student-reach')
-    handleDownload('studentFeedback', FEEDBACK_COLUMNS, 'fia-student-feedback')
-    handleDownload('teacherFeedback', FEEDBACK_COLUMNS, 'fia-teacher-feedback')
-    handleDownload('afe', AFE_COLUMNS, 'fia-afe-official')
+  // The final exported workbook — exactly 3 sheets, in this order, no other
+  // sheet: Teacher Feedback, Student Feedback, AFE CSV.
+  const handleDownloadWorkbook = () => {
+    downloadWorkbook('fia-export.xlsx', [
+      { name: 'Teacher Feedback', columns: FEEDBACK_COLUMNS, rows: rowsByTab.teacherFeedback },
+      { name: 'Student Feedback', columns: FEEDBACK_COLUMNS, rows: rowsByTab.studentFeedback },
+      { name: 'AFE CSV', columns: AFE_COLUMNS, rows: rowsByTab.afe },
+    ])
   }
 
   const hasActiveRange = Boolean(range.start || range.end)
@@ -114,13 +113,6 @@ export default function ExportPreviewCard({ directoryVersion }) {
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className={SECONDARY_BUTTON}>
           <RefreshIcon /> {t('export.exportPreview.refresh')}
-        </button>
-        <button
-          type="button"
-          onClick={() => handleDownload('reach', STUDENT_REACH_COLUMNS, 'fia-student-reach')}
-          className={TEAL_BUTTON}
-        >
-          {t('export.exportPreview.studentReachCsv')}
         </button>
         <button
           type="button"
@@ -143,7 +135,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
         >
           {t('export.exportPreview.afeCsv')}
         </button>
-        <button type="button" onClick={handleDownloadAll} className={AMBER_BUTTON}>
+        <button type="button" onClick={handleDownloadWorkbook} className={AMBER_BUTTON}>
           {t('export.exportPreview.downloadAll')}
         </button>
       </div>

@@ -5,10 +5,10 @@
 // disagree with each other.
 //
 // Only grades 6–12 count toward "all required grades" — matches the Teacher
-// Portal's own Student Reach grade range (ReachDataPage only ever lets a
-// teacher submit these grades), so reach data never contains anything else
-// in normal use; filtering to this list here just keeps the rule explicit
-// and correct even if that ever changes.
+// Portal's own Student Feedback grade range (only these grades are ever
+// offered when starting a feedback batch), so batch data never contains
+// anything else in normal use; filtering to this list here just keeps the
+// rule explicit and correct even if that ever changes.
 export const REQUIRED_GRADES = ['6', '7', '8', '9', '10', '11', '12']
 
 export const SCHOOL_STATUS = {
@@ -17,26 +17,22 @@ export const SCHOOL_STATUS = {
   COMPLETED: 'Completed',
 }
 
-// status: { teacherFeedbackCompleted } — from teacherStatus.service.js's
-// getSchoolStatus(), so the "is teacher feedback done" rule is defined in
-// exactly one place.
-// gradeProgress: the array from computeGradeFeedbackProgress() — each entry
-// already carries { grade, targetMet } for the 40%-rule Student Feedback
-// completion check.
-export function computeSchoolOverallStatus(status, gradeProgress) {
+// status: { teacherFeedbackCompleted, studentFeedbackCompleted } — entirely
+// from teacherStatus.service.js's getSchoolStatus(), which is the ONE place
+// that decides what "done" means for each half (teacher: submitted for
+// every enabled tour; student: EVERY required grade 6–12 has a batch AND has
+// met its 40% target — see REQUIRED_GRADES above). This function only
+// combines those two already-correct flags into the tri-state label; it
+// must never re-derive completion from gradeProgress itself, or the two
+// "what counts as done" rules could drift apart again.
+export function computeSchoolOverallStatus(status) {
   if (!status.teacherFeedbackCompleted) {
     return SCHOOL_STATUS.NOT_STARTED
   }
 
-  const gradesWithReach = new Set(gradeProgress.map((grade) => grade.grade))
-  const allRequiredGradesPresent = REQUIRED_GRADES.every((grade) => gradesWithReach.has(grade))
-  if (!allRequiredGradesPresent) {
-    return SCHOOL_STATUS.PENDING
-  }
-
-  const requiredGradeProgress = gradeProgress.filter((grade) => REQUIRED_GRADES.includes(grade.grade))
-  const studentFeedbackCompleted = requiredGradeProgress.every((grade) => grade.targetMet)
-  if (!studentFeedbackCompleted) {
+  // Partial progress on Student Feedback (even 6 of 7 required grades)
+  // must stay Pending — Completed requires every one of REQUIRED_GRADES.
+  if (!status.studentFeedbackCompleted) {
     return SCHOOL_STATUS.PENDING
   }
 

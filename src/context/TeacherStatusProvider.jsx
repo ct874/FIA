@@ -8,7 +8,6 @@ import { useLanguage } from '../hooks/useLanguage'
 
 const DEFAULT_STATUS = {
   teacherFeedbackCompleted: false,
-  reachSubmitted: false,
   studentFeedbackCompleted: false,
 }
 

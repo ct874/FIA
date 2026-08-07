@@ -4,6 +4,8 @@ const TOUR_ICONS = {
   'CT-L-AM-01': '🎵',
   'CT-L-AWS-01': '☁️',
   'CT-L-FC-01': '🤖',
+  'CT-L-AI-01': '🧠',
+  'CT-L-PRIME-01': '🎬',
 }
 
 function formatMetric(value) {

@@ -64,7 +64,11 @@ export default function DashboardOverview() {
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <SummaryCard accent label={t('home.summary.schools')} value={summary.schoolsCount} />
-            <SummaryCard accent label={t('home.summary.totalReach')} value={summary.totalReach.toLocaleString()} />
+            <SummaryCard
+              accent
+              label={t('home.summary.targetStudents')}
+              value={summary.totalTargetStudents.toLocaleString()}
+            />
             <SummaryCard
               accent
               label={t('home.summary.studentFeedbackResponses')}

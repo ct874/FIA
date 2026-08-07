@@ -134,17 +134,10 @@ export default function TeacherNavbar() {
       isCompleted: (s) => s.teacherFeedbackCompleted,
     },
     {
-      key: 'reach',
-      label: t('nav.studentReach'),
-      to: TEACHER_ROUTES.REACH_DATA,
-      isUnlocked: (s) => s.teacherFeedbackCompleted,
-      isCompleted: (s) => s.reachSubmitted,
-    },
-    {
       key: 'studentFeedback',
       label: t('nav.studentFeedback'),
       to: TEACHER_ROUTES.STUDENT_FEEDBACK,
-      isUnlocked: (s) => s.reachSubmitted,
+      isUnlocked: (s) => s.teacherFeedbackCompleted,
       isCompleted: (s) => s.studentFeedbackCompleted,
     },
   ]

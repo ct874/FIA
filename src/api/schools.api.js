@@ -30,3 +30,6 @@ export const lookupSchoolRequest = (udise) => axiosClient.get(`/schools/lookup/$
 export const deleteAllSchoolsRequest = () => axiosClient.delete('/schools').then(notifyDataChanged)
 
 export const deleteAllProgramDataRequest = () => axiosClient.delete('/schools/data').then(notifyDataChanged)
+
+export const resetDatabaseRequest = (password) =>
+  axiosClient.post('/schools/reset', { password }).then(notifyDataChanged)

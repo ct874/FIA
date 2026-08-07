@@ -13,7 +13,10 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // No Origin header (Postman, curl, server-to-server calls) — allow.
-      if (!origin || env.clientOrigins.includes(origin)) {
+      // In development also allow any localhost/127.0.0.1 port, since Vite
+      // bumps to the next free port (5174, 5175, ...) whenever 5173 is busy.
+      const isLocalDev = !env.isProduction && origin && /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)
+      if (!origin || env.clientOrigins.includes(origin) || isLocalDev) {
         callback(null, true)
       } else {
         callback(new Error(`Origin ${origin} is not allowed by CORS`))

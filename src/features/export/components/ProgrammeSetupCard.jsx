@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import TextInput from '../../../components/ui/TextInput'
 import PerSchoolExportCodesTable from './PerSchoolExportCodesTable'
-import { TOURS } from '../../../data/schoolRecords.schema'
+import { ENABLED_TOURS } from '../../../data/schoolRecords.schema'
 import { useLanguage } from '../../../hooks/useLanguage'
 import {
   PROGRAMME_SETUP_STORAGE_KEY,
@@ -124,7 +124,7 @@ export default function ProgrammeSetupCard({ onSaved, directoryVersion }) {
           {t('export.programmeSetup.sessionDuration')}
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {Object.values(TOURS).map((tour) => (
+          {ENABLED_TOURS.map((tour) => (
             <TextInput
               key={tour.id}
               id={`duration-${tour.id}`}

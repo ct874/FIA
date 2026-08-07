@@ -1,9 +1,11 @@
 import { School } from '../models/school.model.js'
 import { processSchoolListUpload } from '../services/school.service.js'
 import { getSchoolsOverview, getAdminSubmissions, deleteAllProgramData } from '../services/adminDashboard.service.js'
+import { verifySuperAdminPassword } from '../services/auth.service.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { sendSuccess } from '../utils/ApiResponse.js'
 import { ApiError } from '../utils/ApiError.js'
+import { sortBySchoolName } from '../utils/feedbackSort.js'
 
 export const uploadSchoolList = asyncHandler(async (req, res) => {
   if (!req.file) {
@@ -15,7 +17,7 @@ export const uploadSchoolList = asyncHandler(async (req, res) => {
 })
 
 export const listSchools = asyncHandler(async (_req, res) => {
-  const schools = await School.find().sort({ createdAt: -1 })
+  const schools = sortBySchoolName(await School.find(), (school) => school.schoolName)
   sendSuccess(res, { message: 'Schools fetched', data: schools.map((school) => school.toSafeJSON()) })
 })
 
@@ -38,7 +40,7 @@ export const deleteAllSchools = asyncHandler(async (_req, res) => {
 })
 
 // Real, live data behind every Super Admin dashboard card, table, and export
-// — computed from School/StudentReach/StudentFeedback/TeacherFeedback, the
+// — computed from School/StudentFeedbackBatch/StudentFeedback/TeacherFeedback, the
 // same collections the Teacher Portal writes to.
 export const getSchoolsDashboard = asyncHandler(async (_req, res) => {
   const schools = await getSchoolsOverview()
@@ -52,5 +54,18 @@ export const getSchoolsSubmissions = asyncHandler(async (_req, res) => {
 
 export const deleteProgramData = asyncHandler(async (_req, res) => {
   await deleteAllProgramData()
-  sendSuccess(res, { message: 'All feedback and reach data deleted' })
+  sendSuccess(res, { message: 'All feedback data deleted' })
+})
+
+// "Delete Everything / Reset Database" — the most destructive Super Admin
+// action, so it requires re-entering the Super Admin password even though
+// the request already carries a valid session token. Never trust the
+// frontend's own confirmation step alone for something this irreversible.
+export const resetDatabase = asyncHandler(async (req, res) => {
+  const { password } = req.body
+
+  await verifySuperAdminPassword(req.superAdminId, password)
+
+  await Promise.all([School.deleteMany({}), deleteAllProgramData()])
+  sendSuccess(res, { message: 'Database reset successfully' })
 })

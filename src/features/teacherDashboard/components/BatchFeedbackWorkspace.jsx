@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import Button from '../../../components/ui/Button'
+import FeedbackProgressBar from '../../../components/ui/FeedbackProgressBar'
 import { useLanguage } from '../../../hooks/useLanguage'
 
 // These 5 questions are the fixed survey instrument shown to students — they
@@ -45,14 +46,15 @@ function RatingRow({ label, value, onChange }) {
   )
 }
 
-function YesNoRow({ label, value, onChange, yesLabel, noLabel }) {
+function YesNoRow({ label, value, onChange, yesLabel, noLabel, maybeLabel }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 py-2.5">
       <span className="text-sm font-medium text-slate-600">{label}</span>
       <div className="inline-flex overflow-hidden rounded-lg border border-slate-200">
         {[
-          { label: yesLabel, val: true },
-          { label: noLabel, val: false },
+          { label: yesLabel, val: 'Yes' },
+          { label: noLabel, val: 'No' },
+          { label: maybeLabel, val: 'Maybe' },
         ].map((option) => (
           <button
             key={option.label}
@@ -111,7 +113,10 @@ export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSu
     onSubmit(
       responses.map((response) => ({
         grade: grade.grade,
-        tours: grade.tours.map((tour) => ({ tourId: tour.tourId, ...response })),
+        // Career Tour language is captured once when the feedback batch is
+        // started (per grade) and auto-filled here — students are never
+        // asked again.
+        tours: grade.tours.map((tour) => ({ tourId: tour.tourId, language: grade.language, ...response })),
       })),
     )
   }
@@ -171,6 +176,7 @@ export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSu
                         onChange={setAnswer(studentIndex, question.key)}
                         yesLabel={t('studentFeedback.yesLabel')}
                         noLabel={t('studentFeedback.noLabel')}
+                        maybeLabel={t('studentFeedback.maybeLabel')}
                       />
                     ),
                   )}
@@ -180,17 +186,11 @@ export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSu
           </div>
 
           <div className="sticky bottom-0 mt-6 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur-sm sm:-mx-6 sm:px-6">
-            <div className="mb-2 flex items-center justify-between text-xs font-medium text-slate-500">
-              <span>{t('studentFeedback.answeredCount', { filled: filledCells, total: totalCells })}</span>
-              <span>{progressPercent}%</span>
-            </div>
-            <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-              <div
-                className="h-full rounded-full bg-blue-600 transition-all duration-300 ease-out"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            <div className="flex gap-3">
+            <FeedbackProgressBar
+              label={t('studentFeedback.answeredCount', { filled: filledCells, total: totalCells })}
+              percent={progressPercent}
+            />
+            <div className="mt-3 flex gap-3">
               <button
                 type="button"
                 onClick={onCancel}

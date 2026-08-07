@@ -1,29 +1,24 @@
 import * as XLSX from 'xlsx'
 import { TOURS } from '../../../data/schoolRecords.schema'
 import { getSchoolExportCodes } from '../../../services/schoolExportCodes.service'
+import { getCareerTourExportCode, getResponseExportCode, getLanguageExportCode, getMonthExportCode } from './exportMappings'
+import { sortByFeedbackHierarchy, sortBySchoolName } from '../../../utils/feedbackSort'
 
-const TOUR_SEQUENCE = { [TOURS.AM.id]: 1, [TOURS.AWS.id]: 2, [TOURS.FC.id]: 3 }
-
+// TODO: AI Career Tour / Amazon Prime have no partner host id yet — add
+// entries here (get the real value from the AFE partner) before enabling
+// either tour in src/data/schoolRecords.schema.js, or this AFE export will
+// leave distribution_channel_host_id blank for their rows.
 const TOUR_HOST_ID = {
   [TOURS.AM.id]: 'AFE-IN-AM-YT-HI-2026',
   [TOURS.AWS.id]: 'AFE-IN-AWS-YT-HI-2026',
   [TOURS.FC.id]: 'AFE-IN-FC-YT-HI-2026',
 }
 
-export const STUDENT_REACH_COLUMNS = [
-  'Id*', 'CreatedAt', 'UpdatedAt', 'DeviceId*', 'MobileCreatedAt', 'MobileUpdatedAt', 'Location',
-  'TimeTaken', 'parentResponseId', 'DistrictCode*', 'Financial year', 'Month', 'Institution Type',
-  'State', 'District', 'What type of school is this?', 'Specify other', 'UDISE of School',
-  'School Name', 'Grade', 'Class Section', 'Unit (Student/Teacher)', 'Email ID (Optional)',
-  'Which career tour did you attend?', 'In which language did you watch the Career Tour?',
-  'No. of Students Reached', 'Total Unique Student Count',
-]
-
 export const FEEDBACK_COLUMNS = [
   'Id*', 'CreatedAt', 'UpdatedAt', 'DeviceId*', 'MobileCreatedAt', 'MobileUpdatedAt', 'Location',
   'TimeTaken', 'parentResponseId', 'DistrictCode*', 'Financial Year', 'Month', 'Institution Type',
   'UDISE of School', 'School Name', 'State', 'District', 'Grade', 'Unit (Student/Teacher)',
-  'Student Dummy Id or Teacher Email', 'Which Career Tour are you giving feedback on?',
+  'Student Dummy Id or Teacher Email', 'Email', 'Which Career Tour are you giving feedback on?',
   'In which language did you watch the Career Tour?',
   "How much did you enjoy this Career Tour? (1 =Didn't like it at all to 5 = Loved it)",
   'Please rate your overall experience of the tour (1 = Very Poor to 5 = Excellent)',
@@ -75,58 +70,37 @@ function makeId(prefix, udise, tourId, suffix = '') {
   return `${prefix}-${udise}-${tourId}${suffix}`
 }
 
-export function buildStudentReachRows(schools, setup, range) {
-  const codes = getSchoolExportCodes()
-  const rows = []
-
-  schools.forEach((school) => {
-    const code = codes[school.udise] || {}
-    school.reach
-      .filter((reach) => inDateRange(reach.createdAt, range))
-      .forEach((reach) => {
-        reach.tours.forEach((tour) => {
-          rows.push({
-            'Id*': makeId('reach', school.udise, tour.tourId, `-${reach.grade}`),
-            CreatedAt: '',
-            UpdatedAt: '',
-            'DeviceId*': setup.deviceId,
-            MobileCreatedAt: '',
-            MobileUpdatedAt: '',
-            Location: '',
-            TimeTaken: '',
-            parentResponseId: '',
-            'DistrictCode*': code.districtCode || '',
-            'Financial year': reach.financialYear || setup.financialYear,
-            Month: reach.month || '',
-            'Institution Type': setup.institutionType,
-            State: school.state,
-            District: school.district,
-            'What type of school is this?': setup.schoolType,
-            'Specify other': '',
-            'UDISE of School': school.udise,
-            'School Name': school.schoolName,
-            Grade: reach.grade,
-            'Class Section': '',
-            'Unit (Student/Teacher)': 1,
-            'Email ID (Optional)': '',
-            'Which career tour did you attend?': TOUR_SEQUENCE[tour.tourId],
-            'In which language did you watch the Career Tour?': reach.language || '',
-            'No. of Students Reached': reach.studentsReached,
-            'Total Unique Student Count': reach.uniqueStudentCount,
-          })
-        })
-      })
-  })
-
-  return rows
+// Applies the required School -> Grade -> Student/Teacher -> Career Tour
+// ordering (see src/utils/feedbackSort.js) before any export rows are
+// built — downloaded Excel/CSV/AFE files must come out in exactly the same
+// order the dashboard tables display, per the client's export requirement.
+function sortSchoolsForExport(schools) {
+  return sortBySchoolName(schools, (school) => school.schoolName).map((school) => ({
+    ...school,
+    studentFeedback: sortByFeedbackHierarchy(school.studentFeedback, (row) => ({
+      schoolName: school.schoolName,
+      grade: row.grade,
+      type: 'Student',
+      identifier: row.studentDummyId,
+      tourId: row.tourId,
+    })),
+    teacherFeedback: sortByFeedbackHierarchy(school.teacherFeedback, (row) => ({
+      schoolName: school.schoolName,
+      grade: null,
+      type: 'Teacher',
+      identifier: row.email || row.submittedBy,
+      tourId: row.tourId,
+    })),
+  }))
 }
 
 export function buildFeedbackRows(schools, setup, unit, range) {
   const codes = getSchoolExportCodes()
   const rows = []
+  const sortedSchools = sortSchoolsForExport(schools)
 
   if (unit === 'student') {
-    schools.forEach((school) => {
+    sortedSchools.forEach((school) => {
       const code = codes[school.udise] || {}
       school.studentFeedback
         .filter((row) => inDateRange(row.createdAt, range))
@@ -143,7 +117,7 @@ export function buildFeedbackRows(schools, setup, unit, range) {
             parentResponseId: '',
             'DistrictCode*': code.districtCode || '',
             'Financial Year': row.financialYear || setup.financialYear,
-            Month: row.month || '',
+            Month: getMonthExportCode(row.month),
             'Institution Type': setup.institutionType,
             'UDISE of School': school.udise,
             'School Name': school.schoolName,
@@ -152,13 +126,14 @@ export function buildFeedbackRows(schools, setup, unit, range) {
             Grade: row.grade,
             'Unit (Student/Teacher)': 1,
             'Student Dummy Id or Teacher Email': row.studentDummyId || '',
-            'Which Career Tour are you giving feedback on?': TOUR_SEQUENCE[row.tourId],
-            'In which language did you watch the Career Tour?': row.language || '',
+            Email: '',
+            'Which Career Tour are you giving feedback on?': getCareerTourExportCode(row.tourId),
+            'In which language did you watch the Career Tour?': getLanguageExportCode(row.language),
             "How much did you enjoy this Career Tour? (1 =Didn't like it at all to 5 = Loved it)": row.enjoyment,
             'Please rate your overall experience of the tour (1 = Very Poor to 5 = Excellent)': row.overallExperience,
             'After watching the career tour how interested are you in learning more about careers of the future? (1 = Not at all interested to 5 = Very interested)': row.interestInFutureCareer,
-            'Did the tour make you want to explore a career of the future for yourself?': row.wantExploreCareer ? 'Yes' : 'No',
-            'Would you like to see more tours like this?': row.wantMoreTours ? 'Yes' : 'No',
+            'Did the tour make you want to explore a career of the future for yourself?': getResponseExportCode(row.wantExploreCareer),
+            'Would you like to see more tours like this?': getResponseExportCode(row.wantMoreTours),
             'On a scale of 0-10 how likely are you to recommend to this Tour to other teachers/schools?  (0-Not at all likely 10-Extremely likely)': '',
             'How satisfied are you with the resources provided (Teacher Toolkit worksheets facilitation guide)?  (1 = Extremely dissatisfied to 5 = Extremely satisfied)': '',
             'How easy was it to integrate this tour into your classroom lesson plan? (1 = Extremely difficult to 5 = Extremely easy)': '',
@@ -170,7 +145,7 @@ export function buildFeedbackRows(schools, setup, unit, range) {
     return rows
   }
 
-  schools.forEach((school) => {
+  sortedSchools.forEach((school) => {
     const code = codes[school.udise] || {}
     school.teacherFeedback
       .filter((row) => inDateRange(row.createdAt, range))
@@ -187,7 +162,7 @@ export function buildFeedbackRows(schools, setup, unit, range) {
           parentResponseId: '',
           'DistrictCode*': code.districtCode || '',
           'Financial Year': row.financialYear || setup.financialYear,
-          Month: row.month || '',
+          Month: getMonthExportCode(row.month),
           'Institution Type': setup.institutionType,
           'UDISE of School': school.udise,
           'School Name': school.schoolName,
@@ -196,8 +171,9 @@ export function buildFeedbackRows(schools, setup, unit, range) {
           Grade: '',
           'Unit (Student/Teacher)': 2,
           'Student Dummy Id or Teacher Email': row.contactNumber || '',
-          'Which Career Tour are you giving feedback on?': TOUR_SEQUENCE[row.tourId],
-          'In which language did you watch the Career Tour?': row.language || '',
+          Email: row.email || '',
+          'Which Career Tour are you giving feedback on?': getCareerTourExportCode(row.tourId),
+          'In which language did you watch the Career Tour?': getLanguageExportCode(row.language),
           "How much did you enjoy this Career Tour? (1 =Didn't like it at all to 5 = Loved it)": '',
           'Please rate your overall experience of the tour (1 = Very Poor to 5 = Excellent)': '',
           'After watching the career tour how interested are you in learning more about careers of the future? (1 = Not at all interested to 5 = Very interested)': '',
@@ -219,7 +195,7 @@ export function buildAfeRows(schools, setup, range) {
   const codes = getSchoolExportCodes()
   const rows = []
 
-  schools.forEach((school) => {
+  sortSchoolsForExport(schools).forEach((school) => {
     const code = codes[school.udise] || {}
 
     const shared = (tourId, month) => ({
@@ -272,7 +248,7 @@ export function buildAfeRows(schools, setup, range) {
     school.studentFeedback
       .filter((row) => inDateRange(row.createdAt, range))
       .forEach((row) => {
-        const reach = school.reach.find((r) => r.grade === row.grade)
+        const batch = school.feedbackBatches.find((entry) => entry.grade === row.grade)
         rows.push({
           ...shared(row.tourId, row.month),
           product_name: row.tourName,
@@ -286,11 +262,11 @@ export function buildAfeRows(schools, setup, range) {
           class_section: 'NA',
           language: row.language || '',
           unit_type: 'Student',
-          student_count: reach?.uniqueStudentCount ?? 'NA',
+          student_count: batch?.totalStudents ?? 'NA',
           itp_avg: row.interestInFutureCareer,
-          response_rate_percentage: reach ? Math.round((reach.submittedCount / reach.target) * 100) : 'NA',
+          response_rate_percentage: batch ? Math.round((batch.submittedCount / batch.target) * 100) : 'NA',
           video_completion_rate: 'NA',
-          completion_percentage: reach ? Math.round((reach.submittedCount / reach.target) * 100) : 'NA',
+          completion_percentage: batch ? Math.round((batch.submittedCount / batch.target) * 100) : 'NA',
           facilitator_name: 'NA',
           teacher_feedback_text: 'NA',
           implementation_challenges: 'NA',
@@ -340,4 +316,16 @@ export function downloadCsv(filename, columns, rows) {
   link.click()
   link.remove()
   URL.revokeObjectURL(url)
+}
+
+// The final exported workbook — exactly 3 sheets (Teacher Feedback, Student
+// Feedback, AFE CSV), in that order, no other sheet. `sheets` is
+// [{ name, columns, rows }, ...].
+export function downloadWorkbook(filename, sheets) {
+  const workbook = XLSX.utils.book_new()
+  sheets.forEach(({ name, columns, rows }) => {
+    const worksheet = XLSX.utils.json_to_sheet(rows, { header: columns })
+    XLSX.utils.book_append_sheet(workbook, worksheet, name)
+  })
+  XLSX.writeFile(workbook, filename)
 }

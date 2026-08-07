@@ -8,8 +8,11 @@ const tourAnswerSchema = new mongoose.Schema(
     enjoyment: { type: Number, min: 1, max: 5, required: true },
     overallExperience: { type: Number, min: 1, max: 5, required: true },
     interestInFutureCareer: { type: Number, min: 1, max: 5, required: true },
-    wantExploreCareer: { type: Boolean, required: true },
-    wantMoreTours: { type: Boolean, required: true },
+    // Tri-state Yes/No/Maybe response — stored as the human-readable label
+    // itself (not a boolean) so "Maybe" has somewhere to live; exports map
+    // these to numeric codes (Yes=1, No=2, Maybe=3) via a centralized helper.
+    wantExploreCareer: { type: String, required: true, enum: ['Yes', 'No', 'Maybe'] },
+    wantMoreTours: { type: String, required: true, enum: ['Yes', 'No', 'Maybe'] },
   },
   { _id: false },
 )

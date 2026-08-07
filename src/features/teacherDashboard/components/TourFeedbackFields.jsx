@@ -3,13 +3,13 @@ import RatingScale from '../../../components/ui/RatingScale'
 import TextArea from '../../../components/ui/TextArea'
 import { useLanguage } from '../../../hooks/useLanguage'
 
-export default function TourFeedbackFields({ tour, value, onChange, errors = {} }) {
+export default function TourFeedbackFields({ tour, value, onChange, errors = {}, languages = [] }) {
   const { t } = useLanguage()
 
-  const LANGUAGE_OPTIONS = [
-    { value: 'Hindi', label: 'Hindi' },
-    { value: 'English', label: 'English' },
-  ]
+  // Options come from the server's Career Tour language catalog
+  // (server/src/constants/grades.js LANGUAGES) via /teacher/meta — adding a
+  // language there is enough to make it selectable here, no UI change needed.
+  const languageOptions = languages.map((language) => ({ value: language, label: language }))
 
   const setField = (field) => (fieldValue) => {
     onChange({ ...value, [field]: fieldValue })
@@ -23,7 +23,7 @@ export default function TourFeedbackFields({ tour, value, onChange, errors = {} 
         id={`${tour.tourId}-language`}
         label={t('tourFeedbackFields.languageQuestion')}
         placeholder={t('tourFeedbackFields.languagePlaceholder')}
-        options={LANGUAGE_OPTIONS}
+        options={languageOptions}
         value={value.language || ''}
         onChange={(event) => setField('language')(event.target.value)}
         error={errors.language}
@@ -57,6 +57,7 @@ export default function TourFeedbackFields({ tour, value, onChange, errors = {} 
         label={t('tourFeedbackFields.biggestBenefitQuestion')}
         value={value.biggestBenefit || ''}
         onChange={(event) => setField('biggestBenefit')(event.target.value)}
+        error={errors.biggestBenefit}
       />
 
       <TextArea
@@ -64,6 +65,7 @@ export default function TourFeedbackFields({ tour, value, onChange, errors = {} 
         label={t('tourFeedbackFields.improvementsQuestion')}
         value={value.improvements || ''}
         onChange={(event) => setField('improvements')(event.target.value)}
+        error={errors.improvements}
       />
     </div>
   )

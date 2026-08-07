@@ -8,7 +8,7 @@ function CheckIcon({ className = 'h-3.5 w-3.5' }) {
   )
 }
 
-const STEP_KEYS = ['workflowSteps.teacherFeedback', 'workflowSteps.studentReach', 'workflowSteps.studentFeedback']
+const STEP_KEYS = ['workflowSteps.teacherFeedback', 'workflowSteps.studentFeedback']
 
 export default function WorkflowStepper({ currentStep, completedSteps = [] }) {
   const { t } = useLanguage()

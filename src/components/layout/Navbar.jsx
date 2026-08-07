@@ -94,6 +94,7 @@ export default function Navbar() {
     { label: t('nav.dashboard'), to: ROUTES.HOME },
     { label: t('nav.allSubmissions'), to: ROUTES.SUBMISSIONS },
     { label: t('nav.exportData'), to: ROUTES.EXPORT },
+    { label: t('nav.targets'), to: ROUTES.TARGETS },
   ]
 
   useEffect(() => {

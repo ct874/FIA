@@ -32,7 +32,7 @@ export default function GradeFeedbackCard({ grade, onStart }) {
       <div className={`px-5 py-4 text-white ${grade.targetMet ? 'bg-green-600' : 'bg-slate-900'}`}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">
-            {t('reachData.gradeLabel')} {grade.grade}
+            {t('feedbackBatch.gradeLabel')} {grade.grade}
           </h3>
           {grade.targetMet && (
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
@@ -41,7 +41,7 @@ export default function GradeFeedbackCard({ grade, onStart }) {
           )}
         </div>
         <p className="mt-0.5 text-xs opacity-80">
-          {t('gradeFeedbackCard.studentsAndTours', { students: grade.studentsReached, tours: grade.tours.length })}
+          {t('gradeFeedbackCard.studentsAndTours', { students: grade.totalStudents, tours: grade.tours.length })}
         </p>
       </div>
 

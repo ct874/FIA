@@ -30,7 +30,7 @@ export default function CompletedSchoolsSection() {
     { key: 'tour', label: t('home.completed.columns.tour'), wrap: true },
     { key: 'grade', label: t('home.completed.columns.grade') },
     { key: 'month', label: t('home.completed.columns.month') },
-    { key: 'reach', label: t('home.completed.columns.reach'), render: (row) => row.reach.toLocaleString() },
+    { key: 'target', label: t('home.completed.columns.target'), render: (row) => row.target.toLocaleString() },
     {
       key: 'responses',
       label: t('home.completed.columns.responses'),
@@ -57,7 +57,7 @@ export default function CompletedSchoolsSection() {
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <SummaryCard label={t('home.completed.completedSchools')} value={summary.completedSchools} />
-            <SummaryCard label={t('home.completed.totalReach')} value={summary.totalReach.toLocaleString()} />
+            <SummaryCard label={t('home.completed.targetStudents')} value={summary.totalTarget.toLocaleString()} />
             <SummaryCard label={t('home.completed.totalResponses')} value={summary.totalResponses.toLocaleString()} />
             <SummaryCard label={t('home.completed.averageCsat')} value={summary.avgCsat.toFixed(1)} />
             <SummaryCard label={t('home.completed.averageNps')} value={`${summary.avgNps}%`} />

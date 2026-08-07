@@ -1,4 +1,5 @@
-import { TOURS } from './schoolRecords.schema'
+import { ENABLED_TOURS } from './schoolRecords.schema'
+import { sortByFeedbackHierarchy, sortBySchoolName, getGradeRank } from '../utils/feedbackSort'
 
 function average(values) {
   if (values.length === 0) return null
@@ -19,9 +20,9 @@ function schoolMatchesFilters(school, filters) {
   return !filters.district || school.district === filters.district
 }
 
-function reachMatchesFilters(reach, filters) {
-  if (filters.tourId && !reach.tours.some((tour) => tour.tourId === filters.tourId)) return false
-  if (filters.month && reach.month !== filters.month) return false
+function batchMatchesFilters(batch, filters) {
+  if (filters.tourId && !batch.tours.some((tour) => tour.tourId === filters.tourId)) return false
+  if (filters.month && batch.month !== filters.month) return false
   return true
 }
 
@@ -32,24 +33,51 @@ function feedbackRowMatchesFilters(row, filters) {
 }
 
 /**
+ * Centralized "unique teacher" counting rule for the entire Super Admin
+ * Panel — a teacher who submits feedback for N Career Tours creates N
+ * TeacherFeedback documents (one per tour) but represents exactly ONE
+ * person's feedback session, so every "Teacher Responses" count must be a
+ * DISTINCT count of teachers, not a row count.
+ *
+ * A teacher is identified by their submitted email (preferred) or, for
+ * older records saved before the email field existed, their submitted
+ * name — always scoped to the school (`udise`), since the same identifier
+ * at two different schools is two different participations, not one
+ * merged count.
+ *
+ * Every place that reports a Teacher Responses count must call this
+ * function instead of `.length`-counting teacher feedback rows directly.
+ * `entries` is any array of `{ udise, email, submittedBy }`-shaped objects.
+ */
+export function countUniqueTeacherResponses(entries) {
+  const uniqueKeys = new Set(
+    entries.map((entry) => {
+      const identity = (entry.email || entry.submittedBy || '').trim().toLowerCase()
+      return `${entry.udise}::${identity}`
+    }),
+  )
+  return uniqueKeys.size
+}
+
+/**
  * District/Tour/Month option lists for the overview dashboard's filter bar.
  */
 export function getOverviewFilterOptions(schools) {
   const districts = Array.from(new Set(schools.map((school) => school.district))).sort()
-  const months = Array.from(new Set(schools.flatMap((school) => school.reach.map((reach) => reach.month))))
-  return { districts, months, tours: Object.values(TOURS) }
+  const months = Array.from(new Set(schools.flatMap((school) => school.feedbackBatches.map((batch) => batch.month))))
+  return { districts, months, tours: ENABLED_TOURS }
 }
 
 /**
- * Top-level KPI row for the Home dashboard overview: schools, reach,
+ * Top-level KPI row for the Home dashboard overview: target students,
  * feedback response counts, and overall CSAT/ITP, all respecting the
  * district/tour/month filter.
  */
 export function computeOverviewSummary(schools, filters = {}) {
   const filteredSchools = schools.filter((school) => schoolMatchesFilters(school, filters))
 
-  const reachEntries = filteredSchools.flatMap((school) =>
-    school.reach.filter((reach) => reachMatchesFilters(reach, filters)).map((reach) => ({ school, reach })),
+  const batchEntries = filteredSchools.flatMap((school) =>
+    school.feedbackBatches.filter((batch) => batchMatchesFilters(batch, filters)).map((batch) => ({ school, batch })),
   )
   const studentEntries = filteredSchools.flatMap((school) =>
     school.studentFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)).map((row) => ({ school, row })),
@@ -58,7 +86,7 @@ export function computeOverviewSummary(schools, filters = {}) {
     school.teacherFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)).map((row) => ({ school, row })),
   )
 
-  const totalReach = reachEntries.reduce((sum, entry) => sum + entry.reach.uniqueStudentCount, 0)
+  const totalTargetStudents = batchEntries.reduce((sum, entry) => sum + entry.batch.target, 0)
 
   const csatValues = studentEntries.map((entry) => entry.row.enjoyment).filter((value) => value != null)
   const itpValues = studentEntries
@@ -66,20 +94,26 @@ export function computeOverviewSummary(schools, filters = {}) {
     .filter((value) => value != null)
 
   // "Total Schools" counts only schools that have actually logged into the
-  // Teacher Portal and submitted something (reach, student feedback, or
-  // teacher feedback) — a School record with no activity yet is just an
-  // unused login, not a participating school.
+  // Teacher Portal and submitted something (a feedback batch, student
+  // feedback, or teacher feedback) — a School record with no activity yet is
+  // just an unused login, not a participating school.
   const activeSchoolIds = new Set([
-    ...reachEntries.map((entry) => entry.school.udise),
+    ...batchEntries.map((entry) => entry.school.udise),
     ...studentEntries.map((entry) => entry.school.udise),
     ...teacherEntries.map((entry) => entry.school.udise),
   ])
 
   return {
     schoolsCount: activeSchoolIds.size,
-    totalReach,
+    totalTargetStudents,
     studentResponses: studentEntries.length,
-    teacherResponses: teacherEntries.length,
+    teacherResponses: countUniqueTeacherResponses(
+      teacherEntries.map((entry) => ({
+        udise: entry.school.udise,
+        email: entry.row.email,
+        submittedBy: entry.row.submittedBy,
+      })),
+    ),
     overallCsat: average(csatValues) ?? 0,
     overallItp: average(itpValues) ?? 0,
   }
@@ -98,7 +132,7 @@ export function computeTourBreakdown(schools, filters = {}) {
     school.teacherFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)),
   )
 
-  return Object.values(TOURS).map((tour) => {
+  return ENABLED_TOURS.map((tour) => {
     const tourStudentRows = studentRows.filter((row) => row.tourId === tour.id)
     const tourTeacherRows = teacherRows.filter((row) => row.tourId === tour.id)
 
@@ -119,7 +153,7 @@ function statusLabel(isDone, hasAnyActivity) {
 
 function computeLastActivity(school) {
   const dates = [
-    ...school.reach.map((reach) => reach.createdAt),
+    ...school.feedbackBatches.map((batch) => batch.createdAt),
     ...school.studentFeedback.map((row) => row.createdAt),
     ...school.teacherFeedback.map((row) => row.createdAt),
   ]
@@ -139,9 +173,10 @@ function computeLastActivity(school) {
  * that renders a school's status agrees with every other one.
  */
 export function computeRegisteredRows(schools) {
-  return schools.map((school) => {
+  // Level 1 of the required hierarchy: schools always listed in the same
+  // fixed (alphabetical) order, regardless of the order the API returned them.
+  return sortBySchoolName(schools, (school) => school.schoolName).map((school) => {
     const teacherFb = statusLabel(school.status.teacherFeedbackCompleted, school.teacherFeedback.length > 0)
-    const reachData = statusLabel(school.status.reachSubmitted, school.reach.length > 0)
     const studentFb = statusLabel(school.status.studentFeedbackCompleted, school.studentFeedback.length > 0)
 
     return {
@@ -150,7 +185,6 @@ export function computeRegisteredRows(schools) {
       udise: school.udise,
       district: school.district,
       teacherFb,
-      reachData,
       studentFb,
       overallStatus: school.overallStatus,
       lastActivity: computeLastActivity(school),
@@ -159,64 +193,72 @@ export function computeRegisteredRows(schools) {
 }
 
 /**
- * One row per (school, grade, tour) combination that has reach data plus at
- * least one student and one teacher feedback submission for that tour, for
- * the "Completed Schools" table.
+ * One row per (school, grade, tour) combination that has at least one
+ * student and one teacher feedback submission for that tour, for the
+ * "Completed Schools" table. Derived straight from the feedback records
+ * themselves — no separate reach/batch record is required to exist.
  */
 export function computeCompletedRows(schools) {
   const rows = []
 
-  schools.forEach((school) => {
-    school.reach.forEach((reach) => {
-      reach.tours.forEach((tour) => {
-        const studentRows = school.studentFeedback.filter(
-          (row) => row.grade === reach.grade && row.tourId === tour.tourId,
-        )
-        const teacherRows = school.teacherFeedback.filter((row) => row.tourId === tour.tourId)
-        if (studentRows.length === 0 || teacherRows.length === 0) return
+  sortBySchoolName(schools, (school) => school.schoolName).forEach((school) => {
+    const seenGradeTours = new Set()
 
-        rows.push({
-          id: `${school.udise}-${tour.tourId}-${reach.grade}`,
-          school: school.schoolName,
-          district: school.district,
-          tour: tour.tourName,
-          grade: reach.grade,
-          month: reach.month,
-          reach: reach.uniqueStudentCount,
-          responses: studentRows.length,
-          avgCsat: average(studentRows.map((row) => row.enjoyment).filter((value) => value != null)) ?? 0,
-          nps: computeNps(teacherRows.map((row) => row.recommendScore).filter((value) => value != null)) ?? 0,
-        })
+    school.studentFeedback.forEach((studentRow) => {
+      const key = `${studentRow.grade}-${studentRow.tourId}`
+      if (seenGradeTours.has(key)) return
+      seenGradeTours.add(key)
+
+      const studentRows = school.studentFeedback.filter(
+        (row) => row.grade === studentRow.grade && row.tourId === studentRow.tourId,
+      )
+      const teacherRows = school.teacherFeedback.filter((row) => row.tourId === studentRow.tourId)
+      if (teacherRows.length === 0) return
+
+      const batch = school.feedbackBatches.find((entry) => entry.grade === studentRow.grade)
+
+      rows.push({
+        id: `${school.udise}-${studentRow.tourId}-${studentRow.grade}`,
+        school: school.schoolName,
+        district: school.district,
+        tour: studentRow.tourName,
+        tourId: studentRow.tourId,
+        grade: studentRow.grade,
+        month: studentRow.month,
+        target: batch?.target ?? studentRows.length,
+        responses: studentRows.length,
+        avgCsat: average(studentRows.map((row) => row.enjoyment).filter((value) => value != null)) ?? 0,
+        nps: computeNps(teacherRows.map((row) => row.recommendScore).filter((value) => value != null)) ?? 0,
       })
     })
   })
 
-  return rows
+  // Grade (ascending) -> Career Tour, within the already school-ordered rows above.
+  return sortByFeedbackHierarchy(rows, (row) => ({
+    schoolName: row.school,
+    grade: row.grade,
+    identifier: '',
+    tourId: row.tourId,
+  }))
 }
 
 /**
  * One card per grade found anywhere in the database, aggregated across every
- * school — e.g. Grade 6 across School A (15 students) + School B (19
- * students) = one "Grade 6" card with Total Students 34. No grade is
- * hardcoded; the set of cards is whatever grades currently have reach data.
+ * school — e.g. Grade 6 across School A (15 students targeted) + School B
+ * (19 students targeted) = one "Grade 6" card with Total Students 34. No
+ * grade is hardcoded; the set of cards is whatever grades currently have a
+ * feedback batch.
  */
 export function computeGradeSummaryCards(schools) {
   const byGrade = new Map()
 
   schools.forEach((school) => {
-    school.reach.forEach((reach) => {
-      const entry = byGrade.get(reach.grade) || {
-        grade: reach.grade,
-        totalStudents: 0,
-        totalReach: 0,
-        target: 0,
-        submitted: 0,
-      }
-      entry.totalStudents += reach.uniqueStudentCount
-      entry.totalReach += reach.studentsReached
-      entry.target += reach.target
-      entry.submitted += reach.submittedCount
-      byGrade.set(reach.grade, entry)
+    school.feedbackBatches.forEach((batch) => {
+      const entry = byGrade.get(batch.grade) || { grade: batch.grade, totalStudents: 0, required: 0, submitted: 0 }
+      entry.totalStudents += batch.totalStudents
+      entry.required += batch.target
+      entry.submitted += batch.submittedCount
+      byGrade.set(batch.grade, entry)
     })
   })
 
@@ -224,11 +266,15 @@ export function computeGradeSummaryCards(schools) {
     .map((entry) => ({
       grade: entry.grade,
       totalStudents: entry.totalStudents,
-      totalReach: entry.totalReach,
       totalSubmitted: entry.submitted,
-      completionPercentage: entry.target > 0 ? Math.min(100, Math.round((entry.submitted / entry.target) * 100)) : 0,
+      // "Remaining"/completion here are against the REQUIRED (40%) feedback
+      // count, not the full class size — a teacher's job for a grade is
+      // done once the 40% quota is met, not once every student has replied.
+      totalRemaining: Math.max(0, entry.required - entry.submitted),
+      completionPercentage:
+        entry.required > 0 ? Math.min(100, Math.round((entry.submitted / entry.required) * 100)) : 0,
     }))
-    .sort((a, b) => Number(a.grade) - Number(b.grade))
+    .sort((a, b) => getGradeRank(a.grade) - getGradeRank(b.grade))
 }
 
 /**
@@ -238,13 +284,17 @@ export function computeGradeSummaryCards(schools) {
 export function computeSubmissionRows(schools) {
   const rows = []
 
-  schools.forEach((school) => {
+  sortBySchoolName(schools, (school) => school.schoolName).forEach((school) => {
     school.teacherFeedback.forEach((row) => {
       rows.push({
         id: `sub-teacher-${school.udise}-${row.tourId}-${row.createdAt}`,
         type: 'Teacher',
         school: school.schoolName,
+        udise: school.udise,
+        email: row.email,
+        submittedBy: row.submittedBy,
         tour: row.tourName,
+        tourId: row.tourId,
         grade: '—',
         month: row.month,
         time: row.createdAt,
@@ -258,6 +308,8 @@ export function computeSubmissionRows(schools) {
         type: 'Student',
         school: school.schoolName,
         tour: row.tourName,
+        tourId: row.tourId,
+        identifier: row.studentDummyId,
         grade: row.grade,
         month: row.month,
         time: row.createdAt,
@@ -266,5 +318,13 @@ export function computeSubmissionRows(schools) {
     })
   })
 
-  return rows.sort((a, b) => new Date(a.time) - new Date(b.time))
+  // School -> Grade -> Student/Teacher -> Career Tour, per the required
+  // hierarchy (replaces the old chronological ordering).
+  return sortByFeedbackHierarchy(rows, (row) => ({
+    schoolName: row.school,
+    grade: row.grade === '—' ? null : row.grade,
+    type: row.type,
+    identifier: row.type === 'Teacher' ? row.email || row.submittedBy : row.identifier,
+    tourId: row.tourId,
+  }))
 }

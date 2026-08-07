@@ -133,7 +133,7 @@ export default function TeacherDashboardPage() {
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <SummaryCard accent label={t('teacherDashboard.totalStudents')} value={overview?.totalStudentsReached ?? 0} />
+            <SummaryCard accent label={t('teacherDashboard.totalStudents')} value={overview?.totalStudentsTargeted ?? 0} />
             <SummaryCard accent label={t('teacherDashboard.totalExperiences')} value={overview?.totalExperiences ?? 0} />
             <SummaryCard accent label={t('teacherDashboard.responsesReceived')} value={overview?.totalResponses ?? 0} />
             <SummaryCard

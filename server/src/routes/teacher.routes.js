@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { authenticateSchool } from '../middleware/authenticateSchool.js'
 import { getMeta, getStatus, getDashboard } from '../controllers/teacherDashboard.controller.js'
 import { getTeacherFeedback, postTeacherFeedback } from '../controllers/teacherFeedback.controller.js'
-import { getStudentReach, postStudentReach } from '../controllers/studentReach.controller.js'
+import { postStudentFeedbackBatch } from '../controllers/studentFeedbackBatch.controller.js'
 import {
   getStudentFeedbackSummaryHandler,
   postStudentFeedback,
@@ -20,10 +20,8 @@ router.get('/dashboard', getDashboard)
 router.get('/feedback', getTeacherFeedback)
 router.post('/feedback', postTeacherFeedback)
 
-router.get('/reach', getStudentReach)
-router.post('/reach', postStudentReach)
-
 router.get('/student-feedback/summary', getStudentFeedbackSummaryHandler)
+router.post('/student-feedback/batches', postStudentFeedbackBatch)
 router.post('/student-feedback', postStudentFeedback)
 
 router.get('/responses', getResponses)

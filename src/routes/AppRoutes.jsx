@@ -9,9 +9,9 @@ import LoginPage from '../features/auth/pages/LoginPage'
 import HomePage from '../features/home/pages/HomePage'
 import SubmissionsPage from '../features/submissions/pages/SubmissionsPage'
 import ExportPage from '../features/export/pages/ExportPage'
+import TargetManagementPage from '../features/targets/pages/TargetManagementPage'
 import TeacherLoginPage from '../features/teacherAuth/pages/TeacherLoginPage'
 import TeacherDashboardPage from '../features/teacherDashboard/pages/TeacherDashboardPage'
-import ReachDataPage from '../features/teacherDashboard/pages/ReachDataPage'
 import TeacherFeedbackPage from '../features/teacherDashboard/pages/TeacherFeedbackPage'
 import StudentFeedbackPage from '../features/teacherDashboard/pages/StudentFeedbackPage'
 import { ROUTES, TEACHER_ROUTES } from '../utils/constants'
@@ -28,6 +28,7 @@ export default function AppRoutes() {
           <Route path={ROUTES.HOME} element={<HomePage />} />
           <Route path={ROUTES.SUBMISSIONS} element={<SubmissionsPage />} />
           <Route path={ROUTES.EXPORT} element={<ExportPage />} />
+          <Route path={ROUTES.TARGETS} element={<TargetManagementPage />} />
         </Route>
       </Route>
 
@@ -39,7 +40,6 @@ export default function AppRoutes() {
         <Route element={<TeacherLayout />}>
           <Route path={TEACHER_ROUTES.DASHBOARD} element={<TeacherDashboardPage />} />
           <Route path={TEACHER_ROUTES.FEEDBACK} element={<TeacherFeedbackPage />} />
-          <Route path={TEACHER_ROUTES.REACH_DATA} element={<ReachDataPage />} />
           <Route path={TEACHER_ROUTES.STUDENT_FEEDBACK} element={<StudentFeedbackPage />} />
         </Route>
       </Route>

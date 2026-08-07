@@ -28,11 +28,6 @@ export default function RegisteredSchoolsSection() {
       render: (row) => <StatusBadge status={row.teacherFb} />,
     },
     {
-      key: 'reachData',
-      label: t('home.registered.columns.reachData'),
-      render: (row) => <StatusBadge status={row.reachData} />,
-    },
-    {
       key: 'studentFb',
       label: t('home.registered.columns.studentFb'),
       render: (row) => <StatusBadge status={row.studentFb} />,
