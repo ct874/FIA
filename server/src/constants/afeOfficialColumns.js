@@ -29,13 +29,18 @@ export const AFE_OFFICIAL_COLUMNS = [
 // correction, the first "Id" column must now carry a unique generated
 // value per row (see afeExport.service.js), unlike the original spec which
 // required it blank.
+//
+// NOTE: 'total_watch_time_seconds' is also deliberately NOT in this set —
+// per a later client correction, it must carry the corresponding tour's
+// configured duration in seconds (session_duration_minutes * 60), unlike
+// the original spec which required it blank.
 export const AFE_ALWAYS_EMPTY_COLUMNS = new Set([
   'CreatedAt', 'UpdatedAt', 'MobileCreatedAt', 'MobileUpdatedAt', 'Location', 'TimeTaken',
   'parentResponseId', 'unique_student_id', 'zipcode_postal_code', 'educator_id', 'session_start_date',
   'session_end_date', 'session_start_time', 'session_stop_time', 'latitude', 'longitude', 'city',
   'class_section', 'quiz_accuracy_percentage', 'avg_watch_time_seconds', 'videos_completed_count',
   'quizzes_completed_count', 'total_questions_answered', 'correct_answers_count', 'session_completed_flag',
-  'completion_percentage', 'total_watch_time_seconds', 'avg_playback_speed', 'pause_count_total',
+  'completion_percentage', 'avg_playback_speed', 'pause_count_total',
   'seek_count_total', 'facilitator_name', 'teacher_confidence_rating', 'teacher_feedback_text',
   'implementation_challenges', 'device_type', 'platform_os', 'platform_version', 'app_version', 'network_type',
   'data_source',

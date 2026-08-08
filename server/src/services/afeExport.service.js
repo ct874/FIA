@@ -28,6 +28,9 @@ import {
   SCHOOL_STATUS,
 } from './schoolStatus.service.js'
 import { AFE_OFFICIAL_COLUMNS, AFE_ALWAYS_EMPTY_COLUMNS } from '../constants/afeOfficialColumns.js'
+import { calculateCsat } from '../utils/csat.js'
+import { calculateItp } from '../utils/itp.js'
+import { calculateNps } from '../utils/nps.js'
 import {
   AFE_TOUR_SEQUENCE,
   getAfeTourMeta,
@@ -65,17 +68,30 @@ function formatIsoDate(date) {
   return date.toISOString().slice(0, 10)
 }
 
-// Average of a numeric field across a class+tour's student answers — used
-// ONLY for student_csat / itp_avg / response_rate_percentage, per the client
-// spec (every other column keeps its existing, non-aggregated source).
-// Rounded to 2 decimals, matching the same convention the normal portal's
-// own CSAT/ITP averages already use (src/data/schoolRecords.derive.js).
-// Returns '' (never 0/null) when there's nothing to average, consistent
-// with the rest of this export's "blank means no data" rule.
-function average(values) {
-  const nums = values.filter((value) => value !== null && value !== undefined)
-  if (nums.length === 0) return ''
-  return Number((nums.reduce((sum, value) => sum + value, 0) / nums.length).toFixed(2))
+// student_csat / itp_avg must each use the platform's one official formula
+// for their respective metric (sum of submitted 1-5 scores / count of
+// submitted responses, non-responses excluded from the denominator) — see
+// utils/csat.js and utils/itp.js. Converts the null zero-responses result
+// to '' to match this export's existing blank-cell empty-state convention.
+function calculateCsatForExport(ratings) {
+  const result = calculateCsat(ratings)
+  return result === null ? '' : result
+}
+
+function calculateItpForExport(scores) {
+  const result = calculateItp(scores)
+  return result === null ? '' : result
+}
+
+// educator_nps must be the calculated NPS (% Promoters - % Detractors),
+// never the teacher's raw 0-10 rating passed straight through — see
+// utils/nps.js. Applied to whichever TeacherFeedback response(s) feed this
+// row (currently always exactly one — the latest per tour, see
+// teacherByTour below); the same categorization formula applies regardless
+// of how many responses are being summarized.
+function calculateNpsForExport(scores) {
+  const result = calculateNps(scores)
+  return result === null ? '' : result
 }
 
 function groupBySchool(docs) {
@@ -127,6 +143,10 @@ function buildSharedRowFields({ school, tourMeta, unitType, completionDate, subm
   row.language = AFE_LANGUAGE
   row.unit_type = unitType
   row.session_duration_minutes = tourMeta.durationMinutes
+  // Corresponding tour's configured duration, converted to seconds (e.g.
+  // AWS 27 min -> 1620) — per client correction; every other *_seconds/
+  // *_count column stays blank (see AFE_ALWAYS_EMPTY_COLUMNS).
+  row.total_watch_time_seconds = tourMeta.durationMinutes * 60
   row.video_completion_rate = AFE_VIDEO_COMPLETION_RATE
   row.submission_date = submissionDate
   return row
@@ -253,12 +273,12 @@ export async function buildAfeOfficialRows() {
           meta: { grade, tourCode: tourMeta.code, unitType, classSequence },
         })
         row.grade_of_students = grade
-        row.student_csat = average(matchingAnswers.map((answer) => answer.enjoyment))
-        row.itp_avg = average(matchingAnswers.map((answer) => answer.interestInFutureCareer))
+        row.student_csat = calculateCsatForExport(matchingAnswers.map((answer) => answer.enjoyment))
+        row.itp_avg = calculateItpForExport(matchingAnswers.map((answer) => answer.interestInFutureCareer))
         row.response_rate_percentage = requiredTarget
           ? Math.round((matchingAnswers.length / requiredTarget) * 100)
           : ''
-        row.educator_nps = teacherDoc ? teacherDoc.recommendScore : ''
+        row.educator_nps = teacherDoc ? calculateNpsForExport([teacherDoc.recommendScore]) : ''
         row.month_name = monthNumber
         row.student_count = studentCount
         // Class-level identifier: identical for all 3 tour rows of the same

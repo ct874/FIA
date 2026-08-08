@@ -64,14 +64,25 @@ export default function StudentFeedbackPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Grades 6–12 only, and always available — a grade already started can be
-  // started again; the backend merges it into the same batch.
+  // A grade whose Student Feedback target has already been met (backend-
+  // computed, from `grades` — the real submitted-feedback summary, not
+  // frontend-only state) is removed from the "Select Grade" dropdown, so it
+  // can't be picked again. A grade not yet started, or started but still
+  // short of its target, stays available. This never deletes any existing
+  // batch/feedback data — it only affects what this dropdown offers.
+  const completedGrades = useMemo(
+    () => new Set(grades.filter((grade) => grade.targetMet).map((grade) => grade.grade)),
+    [grades],
+  )
+
+  // Grades 6–12 only, minus any already-completed grade above.
   const gradeOptions = useMemo(
     () =>
       meta.grades
         .filter((grade) => Number(grade) >= MIN_VISIBLE_GRADE)
+        .filter((grade) => !completedGrades.has(grade))
         .map((grade) => ({ value: grade, label: `${t('feedbackBatch.gradeLabel')} ${grade}` })),
-    [meta.grades, t],
+    [meta.grades, completedGrades, t],
   )
 
   const validateBatch = () => {

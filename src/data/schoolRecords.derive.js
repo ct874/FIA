@@ -1,20 +1,8 @@
 import { ENABLED_TOURS } from './schoolRecords.schema'
 import { sortByFeedbackHierarchy, sortBySchoolName, getGradeRank } from '../utils/feedbackSort'
-
-function average(values) {
-  if (values.length === 0) return null
-  return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2))
-}
-
-// True NPS: % promoters (score 9-10) minus % detractors (score 0-6), from the
-// real 0-10 "how likely to recommend" teacher answer — a -100..100 value,
-// matching the "%" the UI already expects.
-function computeNps(scores) {
-  if (scores.length === 0) return null
-  const promoters = scores.filter((score) => score >= 9).length
-  const detractors = scores.filter((score) => score <= 6).length
-  return Math.round(((promoters - detractors) / scores.length) * 100)
-}
+import { calculateCsat, summarizeCsatRatings } from '../utils/csat'
+import { calculateItp } from '../utils/itp'
+import { summarizeNpsResponses } from '../utils/nps'
 
 function schoolMatchesFilters(school, filters) {
   return !filters.district || school.district === filters.district
@@ -114,8 +102,8 @@ export function computeOverviewSummary(schools, filters = {}) {
         submittedBy: entry.row.submittedBy,
       })),
     ),
-    overallCsat: average(csatValues) ?? 0,
-    overallItp: average(itpValues) ?? 0,
+    overallCsat: calculateCsat(csatValues) ?? 0,
+    overallItp: calculateItp(itpValues) ?? 0,
   }
 }
 
@@ -139,9 +127,9 @@ export function computeTourBreakdown(schools, filters = {}) {
     return {
       tourId: tour.id,
       tourName: tour.name,
-      csat: average(tourStudentRows.map((row) => row.enjoyment).filter((value) => value != null)),
-      itp: average(tourStudentRows.map((row) => row.interestInFutureCareer).filter((value) => value != null)),
-      nps: computeNps(tourTeacherRows.map((row) => row.recommendScore).filter((value) => value != null)),
+      csat: calculateCsat(tourStudentRows.map((row) => row.enjoyment).filter((value) => value != null)),
+      itp: calculateItp(tourStudentRows.map((row) => row.interestInFutureCareer).filter((value) => value != null)),
+      nps: summarizeNpsResponses(tourTeacherRows.map((row) => row.recommendScore).filter((value) => value != null)).nps,
     }
   })
 }
@@ -223,6 +211,8 @@ export function computeCompletedRows(schools) {
         if (teacherRows.length === 0) return
 
         const batch = school.feedbackBatches.find((entry) => entry.grade === studentRow.grade)
+        const csatSummary = summarizeCsatRatings(studentRows.map((row) => row.enjoyment))
+        const npsSummary = summarizeNpsResponses(teacherRows.map((row) => row.recommendScore))
 
         rows.push({
           id: `${school.udise}-${studentRow.tourId}-${studentRow.grade}`,
@@ -234,8 +224,23 @@ export function computeCompletedRows(schools) {
           month: studentRow.month,
           target: batch?.target ?? studentRows.length,
           responses: studentRows.length,
-          avgCsat: average(studentRows.map((row) => row.enjoyment).filter((value) => value != null)) ?? 0,
-          nps: computeNps(teacherRows.map((row) => row.recommendScore).filter((value) => value != null)) ?? 0,
+          avgCsat: csatSummary.average ?? 0,
+          // Raw sum/count behind avgCsat above — NOT displayed anywhere,
+          // only so a caller aggregating several of these rows together
+          // (e.g. dashboardStats.js's computeCompletedSchoolsSummary) can
+          // compute a correctly weighted overall CSAT instead of averaging
+          // already-rounded per-row averages against each other.
+          csatScoreSum: csatSummary.scoreSum,
+          csatResponseCount: csatSummary.responseCount,
+          nps: npsSummary.nps ?? 0,
+          // Raw promoter/detractor/total counts behind nps above — same
+          // reasoning as csatScoreSum/csatResponseCount: lets a caller
+          // combining several of these rows compute a correctly weighted
+          // overall NPS instead of averaging already-computed per-row NPS
+          // values equally against each other.
+          npsPromoters: npsSummary.promoters,
+          npsDetractors: npsSummary.detractors,
+          npsTotalResponses: npsSummary.totalResponses,
         })
       })
     })

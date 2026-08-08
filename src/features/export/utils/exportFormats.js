@@ -2,10 +2,15 @@ import * as XLSX from 'xlsx'
 import {
   getCareerTourExportCode,
   getResponseExportCode,
-  getLanguageExportCode,
   getMonthExportCode,
   FIXED_FEEDBACK_FINANCIAL_YEAR,
 } from './exportMappings'
+
+// "In which language did you watch the Career Tour?" is always exported as
+// 1, regardless of whether Hindi or English was picked — a deliberate
+// client requirement, not a lookup (getLanguageExportCode/LANGUAGE_EXPORT_CODE
+// in exportMappings.js still exist but are no longer used for this column).
+const FIXED_FEEDBACK_LANGUAGE_CODE = 1
 import { sortByFeedbackHierarchy, sortBySchoolName } from '../../../utils/feedbackSort'
 
 // NOTE: the AFE CSV (Official) format previously built here has moved
@@ -17,7 +22,7 @@ export const STUDENT_FEEDBACK_COLUMNS = [
   'Id*', 'CreatedAt', 'UpdatedAt', 'DeviceId*', 'MobileCreatedAt', 'MobileUpdatedAt', 'Location',
   'TimeTaken', 'parentResponseId', 'DistrictCode*', 'Financial Year', 'Month', 'Institution Type',
   'UDISE of School', 'School Name', 'State', 'District', 'Grade', 'Unit (Student/Teacher)',
-  'Student Dummy Id or Teacher Email', 'Email', 'Which Career Tour are you giving feedback on?',
+  'Student Dummy Id or Teacher Email', 'Which Career Tour are you giving feedback on?',
   'In which language did you watch the Career Tour?',
   "How much did you enjoy this Career Tour? (1 =Didn't like it at all to 5 = Loved it)",
   'Please rate your overall experience of the tour (1 = Very Poor to 5 = Excellent)',
@@ -31,15 +36,15 @@ export const STUDENT_FEEDBACK_COLUMNS = [
   'What improvements would you suggest for future tours?',
 ]
 
-// Same shape as STUDENT_FEEDBACK_COLUMNS, except: no separate "Email"
-// column (removed entirely), and "Student Dummy Id or Teacher Email" is
-// renamed to "Teacher Email" — Teacher Feedback has no student dummy ID, so
-// that column exclusively carries the teacher's actual email address here.
+// Same column name as STUDENT_FEEDBACK_COLUMNS' "Student Dummy Id or
+// Teacher Email" (both forms use the identical header) and no separate
+// "Email" column — Teacher Feedback has no student dummy ID, so that column
+// exclusively carries the teacher's actual email address here.
 export const TEACHER_FEEDBACK_COLUMNS = [
   'Id*', 'CreatedAt', 'UpdatedAt', 'DeviceId*', 'MobileCreatedAt', 'MobileUpdatedAt', 'Location',
   'TimeTaken', 'parentResponseId', 'DistrictCode*', 'Financial Year', 'Month', 'Institution Type',
   'UDISE of School', 'School Name', 'State', 'District', 'Grade', 'Unit (Student/Teacher)',
-  'Teacher Email', 'Which Career Tour are you giving feedback on?',
+  'Student Dummy Id or Teacher Email', 'Which Career Tour are you giving feedback on?',
   'In which language did you watch the Career Tour?',
   "How much did you enjoy this Career Tour? (1 =Didn't like it at all to 5 = Loved it)",
   'Please rate your overall experience of the tour (1 = Very Poor to 5 = Excellent)',
@@ -132,9 +137,8 @@ export function buildFeedbackRows(schools, setup, unit, range) {
             Grade: row.grade,
             'Unit (Student/Teacher)': 1,
             'Student Dummy Id or Teacher Email': row.studentDummyId || '',
-            Email: '',
             'Which Career Tour are you giving feedback on?': getCareerTourExportCode(row.tourId),
-            'In which language did you watch the Career Tour?': getLanguageExportCode(row.language),
+            'In which language did you watch the Career Tour?': FIXED_FEEDBACK_LANGUAGE_CODE,
             "How much did you enjoy this Career Tour? (1 =Didn't like it at all to 5 = Loved it)": row.enjoyment,
             'Please rate your overall experience of the tour (1 = Very Poor to 5 = Excellent)': row.overallExperience,
             'After watching the career tour how interested are you in learning more about careers of the future? (1 = Not at all interested to 5 = Very interested)': row.interestInFutureCareer,
@@ -175,9 +179,9 @@ export function buildFeedbackRows(schools, setup, unit, range) {
           District: school.district,
           Grade: '',
           'Unit (Student/Teacher)': 2,
-          'Teacher Email': row.email || '',
+          'Student Dummy Id or Teacher Email': row.email || '',
           'Which Career Tour are you giving feedback on?': getCareerTourExportCode(row.tourId),
-          'In which language did you watch the Career Tour?': getLanguageExportCode(row.language),
+          'In which language did you watch the Career Tour?': FIXED_FEEDBACK_LANGUAGE_CODE,
           "How much did you enjoy this Career Tour? (1 =Didn't like it at all to 5 = Loved it)": '',
           'Please rate your overall experience of the tour (1 = Very Poor to 5 = Excellent)': '',
           'After watching the career tour how interested are you in learning more about careers of the future? (1 = Not at all interested to 5 = Very interested)': '',
