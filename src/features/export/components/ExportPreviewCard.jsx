@@ -1,18 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import * as XLSX from 'xlsx'
 import Spinner from '../../../components/ui/Spinner'
 import ErrorState from '../../../components/ui/ErrorState'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
 import { useLanguage } from '../../../hooks/useLanguage'
 import { loadProgrammeSetup } from '../utils/programmeSetup'
 import {
-  FEEDBACK_COLUMNS,
-  AFE_COLUMNS,
+  STUDENT_FEEDBACK_COLUMNS,
+  TEACHER_FEEDBACK_COLUMNS,
   buildFeedbackRows,
-  buildAfeRows,
   downloadCsv,
-  downloadWorkbook,
   isCellMissing,
 } from '../utils/exportFormats'
+import { fetchAfeOfficialPreview, downloadAfeOfficialCsv, normalizeBlobError } from '../utils/afeOfficialExport'
+import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { getMonthlyCyclePresets, formatDateForInput, parseDateFromInput } from '../utils/dateRangeCycles'
 
 const PREVIEW_LIMIT = 50
@@ -22,9 +23,9 @@ const SECONDARY_BUTTON =
 const TEAL_BUTTON =
   'inline-flex items-center gap-1.5 rounded-xl bg-teal-700 px-3.5 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-teal-800 hover:shadow-md hover:shadow-teal-700/20'
 const NAVY_BUTTON =
-  'inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-md hover:shadow-slate-900/20'
+  'inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-md hover:shadow-slate-900/20 disabled:cursor-not-allowed disabled:opacity-60'
 const AMBER_BUTTON =
-  'inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-amber-600 hover:shadow-md hover:shadow-amber-500/30'
+  'inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-amber-600 hover:shadow-md hover:shadow-amber-500/30 disabled:cursor-not-allowed disabled:opacity-60'
 const PRESET_BUTTON =
   'rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-all duration-150 ease-out hover:bg-slate-100'
 const DATE_INPUT =
@@ -51,6 +52,46 @@ export default function ExportPreviewCard({ directoryVersion }) {
   const [range, setRange] = useState({ start: null, end: null })
   const [refreshKey, setRefreshKey] = useState(0)
 
+  // The AFE CSV (Official) dataset is entirely backend-generated (school
+  // grouping, completion dates, session IDs, validation — see
+  // server/src/services/afeExport.service.js) — this component only fetches
+  // it for the preview tab / workbook sheet and never re-derives any of it.
+  const [afeData, setAfeData] = useState(null)
+  const [isAfeLoading, setIsAfeLoading] = useState(true)
+  const [afeError, setAfeError] = useState(null)
+
+  // Separate status just for the standalone download button, per the
+  // client spec's required "Preparing AFE Official Export..." -> ready
+  // messaging.
+  const [afeDownloadStatus, setAfeDownloadStatus] = useState('idle') // idle | preparing | ready | error
+  const [afeDownloadError, setAfeDownloadError] = useState(null)
+
+  // reportBusy mirrors useSchoolRecords()'s own pattern: an explicit
+  // "Refresh" click flips the preview back to a spinner and surfaces
+  // errors, while a background reload (directoryVersion changing after an
+  // upload/setup-save elsewhere on the page) just swaps in fresh data once
+  // ready, without flickering the already-rendered preview.
+  const loadAfePreview = useCallback(
+    (reportBusy) =>
+      fetchAfeOfficialPreview()
+        .then((data) => {
+          setAfeData(data)
+          setAfeError(null)
+        })
+        .catch((err) => {
+          if (reportBusy) setAfeError(getApiErrorMessage(err, t('export.exportPreview.afeLoadError')))
+        })
+        .finally(() => {
+          if (reportBusy) setIsAfeLoading(false)
+        }),
+    [t],
+  )
+
+  useEffect(() => {
+    loadAfePreview(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey, directoryVersion])
+
   const TABS = [
     { key: 'studentFeedback', label: t('export.exportPreview.tabs.studentFeedback') },
     { key: 'teacherFeedback', label: t('export.exportPreview.tabs.teacherFeedback') },
@@ -64,38 +105,78 @@ export default function ExportPreviewCard({ directoryVersion }) {
   )
   const presets = useMemo(() => getMonthlyCyclePresets(6), [])
 
-  const rowsByTab = useMemo(() => {
-    if (isLoading) return { studentFeedback: [], teacherFeedback: [], afe: [] }
+  const feedbackRowsByTab = useMemo(() => {
+    if (isLoading) return { studentFeedback: [], teacherFeedback: [] }
     return {
       studentFeedback: buildFeedbackRows(schools, setup, 'student', range),
       teacherFeedback: buildFeedbackRows(schools, setup, 'teacher', range),
-      afe: buildAfeRows(schools, setup, range),
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schools, setup, range, refreshKey, isLoading])
 
+  const afeColumns = afeData?.columns ?? []
+  const afeRows = afeData?.rows ?? []
+
+  const rowsByTab = { ...feedbackRowsByTab, afe: afeRows }
   const columnsByTab = {
-    studentFeedback: FEEDBACK_COLUMNS,
-    teacherFeedback: FEEDBACK_COLUMNS,
-    afe: AFE_COLUMNS,
+    studentFeedback: STUDENT_FEEDBACK_COLUMNS,
+    teacherFeedback: TEACHER_FEEDBACK_COLUMNS,
+    afe: afeColumns,
   }
 
   const activeRows = rowsByTab[activeTab]
   const activeColumns = columnsByTab[activeTab]
   const previewRows = activeRows.slice(0, PREVIEW_LIMIT)
 
+  const handleRefresh = () => {
+    setRefreshKey((key) => key + 1)
+    setIsAfeLoading(true)
+    refetch()
+  }
+
   const handleDownload = (key, columns, filenamePrefix) => {
     downloadCsv(`${filenamePrefix}.csv`, columns, rowsByTab[key])
   }
 
-  // The final exported workbook — exactly 3 sheets, in this order, no other
-  // sheet: Teacher Feedback, Student Feedback, AFE CSV.
-  const handleDownloadWorkbook = () => {
-    downloadWorkbook('fia-export.xlsx', [
-      { name: 'Teacher Feedback', columns: FEEDBACK_COLUMNS, rows: rowsByTab.teacherFeedback },
-      { name: 'Student Feedback', columns: FEEDBACK_COLUMNS, rows: rowsByTab.studentFeedback },
-      { name: 'AFE CSV', columns: AFE_COLUMNS, rows: rowsByTab.afe },
-    ])
+  const handleDownloadAfeOfficial = async () => {
+    setAfeDownloadStatus('preparing')
+    setAfeDownloadError(null)
+    try {
+      await downloadAfeOfficialCsv()
+      setAfeDownloadStatus('ready')
+      setTimeout(() => setAfeDownloadStatus('idle'), 2500)
+    } catch (err) {
+      setAfeDownloadStatus('error')
+      setAfeDownloadError(getApiErrorMessage(err, t('export.exportPreview.afeDownloadError')))
+    }
+  }
+
+  // The final exported workbook — exactly 3 sheets (Teacher Feedback,
+  // Student Feedback, AFE CSV), in that order, no other sheet. The AFE sheet
+  // always fetches a fresh copy from the backend so the workbook can never
+  // ship a stale AFE dataset alongside current Feedback sheets.
+  const handleDownloadWorkbook = async () => {
+    setAfeDownloadStatus('preparing')
+    setAfeDownloadError(null)
+    try {
+      const freshAfeData = await fetchAfeOfficialPreview()
+      const workbook = XLSX.utils.book_new()
+      ;[
+        { name: 'Teacher Feedback', columns: TEACHER_FEEDBACK_COLUMNS, rows: feedbackRowsByTab.teacherFeedback },
+        { name: 'Student Feedback', columns: STUDENT_FEEDBACK_COLUMNS, rows: feedbackRowsByTab.studentFeedback },
+        { name: 'AFE CSV', columns: freshAfeData.columns, rows: freshAfeData.rows },
+      ].forEach(({ name, columns, rows }) => {
+        const worksheet = XLSX.utils.json_to_sheet(rows, { header: columns })
+        XLSX.utils.book_append_sheet(workbook, worksheet, name)
+      })
+      XLSX.writeFile(workbook, 'fia-export.xlsx')
+      setAfeDownloadStatus('ready')
+      setTimeout(() => setAfeDownloadStatus('idle'), 2500)
+    } catch (err) {
+      setAfeDownloadStatus('error')
+      const normalized = await normalizeBlobError(err)
+      setAfeDownloadError(getApiErrorMessage(normalized, t('export.exportPreview.afeDownloadError')))
+    }
   }
 
   const hasActiveRange = Boolean(range.start || range.end)
@@ -110,34 +191,50 @@ export default function ExportPreviewCard({ directoryVersion }) {
         </p>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className={SECONDARY_BUTTON}>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button type="button" onClick={handleRefresh} className={SECONDARY_BUTTON}>
           <RefreshIcon /> {t('export.exportPreview.refresh')}
         </button>
         <button
           type="button"
-          onClick={() => handleDownload('studentFeedback', FEEDBACK_COLUMNS, 'fia-student-feedback')}
+          onClick={() => handleDownload('studentFeedback', STUDENT_FEEDBACK_COLUMNS, 'fia-student-feedback')}
           className={TEAL_BUTTON}
         >
           {t('export.exportPreview.studentFeedbackCsv')}
         </button>
         <button
           type="button"
-          onClick={() => handleDownload('teacherFeedback', FEEDBACK_COLUMNS, 'fia-teacher-feedback')}
+          onClick={() => handleDownload('teacherFeedback', TEACHER_FEEDBACK_COLUMNS, 'fia-teacher-feedback')}
           className={TEAL_BUTTON}
         >
           {t('export.exportPreview.teacherFeedbackCsv')}
         </button>
         <button
           type="button"
-          onClick={() => handleDownload('afe', AFE_COLUMNS, 'fia-afe-official')}
+          onClick={handleDownloadAfeOfficial}
+          disabled={afeDownloadStatus === 'preparing'}
           className={NAVY_BUTTON}
         >
           {t('export.exportPreview.afeCsv')}
         </button>
-        <button type="button" onClick={handleDownloadWorkbook} className={AMBER_BUTTON}>
+        <button
+          type="button"
+          onClick={handleDownloadWorkbook}
+          disabled={afeDownloadStatus === 'preparing'}
+          className={AMBER_BUTTON}
+        >
           {t('export.exportPreview.downloadAll')}
         </button>
+
+        {afeDownloadStatus === 'preparing' && (
+          <span className="text-xs font-medium text-slate-500">{t('export.exportPreview.afePreparing')}</span>
+        )}
+        {afeDownloadStatus === 'ready' && (
+          <span className="text-xs font-medium text-green-600">{t('export.exportPreview.afeReady')}</span>
+        )}
+        {afeDownloadStatus === 'error' && (
+          <span className="text-xs font-medium text-red-600">{afeDownloadError}</span>
+        )}
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
@@ -199,6 +296,9 @@ export default function ExportPreviewCard({ directoryVersion }) {
             </button>
           )}
         </div>
+        {activeTab === 'afe' && (
+          <p className="mt-2 text-xs text-slate-400">{t('export.exportPreview.afeIgnoresDateFilter')}</p>
+        )}
       </div>
 
       <div className="mt-6 flex flex-wrap gap-1 border-b border-slate-200">
@@ -225,11 +325,17 @@ export default function ExportPreviewCard({ directoryVersion }) {
         {activeRows.length > PREVIEW_LIMIT ? t('export.exportPreview.showingFirst', { limit: PREVIEW_LIMIT }) : ''}
       </p>
 
-      {isLoading ? (
+      {activeTab === 'afe' && isAfeLoading ? (
         <div className="flex justify-center py-16">
           <Spinner className="h-6 w-6 text-slate-400" />
         </div>
-      ) : error ? (
+      ) : activeTab === 'afe' && afeError ? (
+        <ErrorState message={afeError} onRetry={() => loadAfePreview(true)} />
+      ) : activeTab !== 'afe' && isLoading ? (
+        <div className="flex justify-center py-16">
+          <Spinner className="h-6 w-6 text-slate-400" />
+        </div>
+      ) : activeTab !== 'afe' && error ? (
         <ErrorState message={error} onRetry={refetch} />
       ) : (
         <div className="mt-2 overflow-x-auto rounded-2xl border border-slate-200">
@@ -250,7 +356,11 @@ export default function ExportPreviewCard({ directoryVersion }) {
               {previewRows.map((row, index) => (
                 <tr key={index} className="border-b border-slate-100 odd:bg-white even:bg-slate-50/60">
                   {activeColumns.map((column) => {
-                    const missing = isCellMissing(column, row[column])
+                    // The AFE (Official) format intentionally leaves many
+                    // cells blank (see server/src/constants/afeOfficialColumns.js)
+                    // — the amber "missing field" highlight only applies to
+                    // the Student/Teacher Feedback tabs' required columns.
+                    const missing = activeTab !== 'afe' && isCellMissing(column, row[column])
                     return (
                       <td
                         key={column}

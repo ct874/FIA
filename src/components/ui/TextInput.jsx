@@ -15,6 +15,7 @@ export default function TextInput({
         className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400
           transition-all duration-150 ease-out
           focus:outline-none focus:ring-4
+          disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-500
           ${
             error
               ? 'border-red-300 focus:border-red-400 focus:ring-red-100'

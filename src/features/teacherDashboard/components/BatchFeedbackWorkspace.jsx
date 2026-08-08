@@ -113,10 +113,7 @@ export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSu
     onSubmit(
       responses.map((response) => ({
         grade: grade.grade,
-        // Career Tour language is captured once when the feedback batch is
-        // started (per grade) and auto-filled here — students are never
-        // asked again.
-        tours: grade.tours.map((tour) => ({ tourId: tour.tourId, language: grade.language, ...response })),
+        tours: grade.tours.map((tour) => ({ tourId: tour.tourId, ...response })),
       })),
     )
   }

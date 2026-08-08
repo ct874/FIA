@@ -19,10 +19,11 @@ import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 
 const MIN_VISIBLE_GRADE = 6
 // Every class is assumed to have watched every enabled Career Tour — the
-// teacher only ever picks a Grade, Student Count, and Language now; tour
-// selection is no longer a user input (see the always-checked, locked
-// checkboxes below).
-const EMPTY_BATCH_FORM = { grade: '', studentCount: '', language: '' }
+// teacher only ever picks a Grade and Student Count now; tour selection is
+// no longer a user input (see the always-checked, locked checkboxes below),
+// and the "In which language did students watch the Career Tour?" question
+// has been removed entirely.
+const EMPTY_BATCH_FORM = { grade: '', studentCount: '' }
 
 export default function StudentFeedbackPage() {
   const toast = useToast()
@@ -73,18 +74,12 @@ export default function StudentFeedbackPage() {
     [meta.grades, t],
   )
 
-  const languageOptions = useMemo(
-    () => meta.languages.map((language) => ({ value: language, label: language })),
-    [meta.languages],
-  )
-
   const validateBatch = () => {
     const nextErrors = {}
     if (!batchForm.grade) nextErrors.grade = t('feedbackBatch.selectGradeError')
     if (!batchForm.studentCount || Number(batchForm.studentCount) <= 0) {
       nextErrors.studentCount = t('feedbackBatch.enterStudentsError')
     }
-    if (!batchForm.language) nextErrors.language = t('feedbackBatch.selectLanguageError')
     return nextErrors
   }
 
@@ -103,7 +98,6 @@ export default function StudentFeedbackPage() {
         // ignores/enforces this independently, but sending it keeps the
         // payload self-describing.
         tourIds: meta.tours.map((tour) => tour.tourId),
-        language: batchForm.language,
       })
       toast.success(t('feedbackBatch.saveSuccess'))
       setBatchForm(EMPTY_BATCH_FORM)
@@ -218,16 +212,6 @@ export default function StudentFeedbackPage() {
                 ))}
               </div>
             </div>
-
-            <Select
-              id="batchLanguage"
-              label={t('feedbackBatch.languageLabel')}
-              placeholder={t('feedbackBatch.languagePlaceholder')}
-              options={languageOptions}
-              value={batchForm.language}
-              onChange={(event) => setBatchForm((prev) => ({ ...prev, language: event.target.value }))}
-              error={batchErrors.language}
-            />
 
             <Button type="submit" isLoading={isStartingBatch} disabled={isStartingBatch}>
               {isStartingBatch ? t('feedbackBatch.saving') : t('feedbackBatch.startBatch')}

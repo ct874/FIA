@@ -84,6 +84,8 @@ export async function getSchoolsOverview() {
         schoolName: school.schoolName,
         district: school.district,
         state: school.state,
+        districtCode: school.districtCode || '',
+        postalCode: school.postalCode || '',
         createdAt: school.createdAt,
         status,
         overallStatus: computeSchoolOverallStatus(status),

@@ -6,19 +6,13 @@ import { computeRequiredFeedbackCount } from '../utils/studentFeedbackTarget.js'
 import { getGradeRank } from '../utils/feedbackSort.js'
 import { REQUIRED_GRADES } from './schoolStatus.service.js'
 
-// Every submitted-count/target computation used by both the status flags and
-// the Student Feedback grade cards, so the two views can never drift apart.
-// `target` is the REQUIRED feedback count — only 40% of the class
-// (StudentFeedbackBatch.studentCount), per the project's Student Feedback
-// rule — not the full class size. `totalStudents` is kept alongside it,
-// unreduced, for anywhere that needs to show the real class size (e.g. "30
-// Total Students, 12 Required").
-export async function computeGradeFeedbackProgress(schoolId) {
-  const [batchRecords, feedbackDocs] = await Promise.all([
-    StudentFeedbackBatch.find({ school: schoolId }),
-    StudentFeedback.find({ school: schoolId }).select('grade'),
-  ])
-
+// Pure version of computeGradeFeedbackProgress() below — takes already-
+// fetched documents instead of querying itself, so callers that already
+// hold every school's batches/feedback in memory (e.g.
+// afeExport.service.js, which loads all schools' data in 4 queries total)
+// can reuse this exact rule without an extra pair of queries per school.
+// `feedbackDocs` only needs a `grade` field on each entry.
+export function computeGradeFeedbackProgressFromDocs(batchRecords, feedbackDocs) {
   const submittedByGrade = new Map()
   feedbackDocs.forEach((doc) => {
     submittedByGrade.set(doc.grade, (submittedByGrade.get(doc.grade) || 0) + 1)
@@ -44,12 +38,25 @@ export async function computeGradeFeedbackProgress(schoolId) {
     .sort((a, b) => getGradeRank(a.grade) - getGradeRank(b.grade)) // Grade 6 -> Grade 12, per the required hierarchy
 }
 
-export async function getSchoolStatus(schoolId) {
-  const [teacherFeedbackCount, gradeProgress] = await Promise.all([
-    TeacherFeedback.countDocuments({ school: schoolId }),
-    computeGradeFeedbackProgress(schoolId),
+// Every submitted-count/target computation used by both the status flags and
+// the Student Feedback grade cards, so the two views can never drift apart.
+// `target` is the REQUIRED feedback count — only 40% of the class
+// (StudentFeedbackBatch.studentCount), per the project's Student Feedback
+// rule — not the full class size. `totalStudents` is kept alongside it,
+// unreduced, for anywhere that needs to show the real class size (e.g. "30
+// Total Students, 12 Required").
+export async function computeGradeFeedbackProgress(schoolId) {
+  const [batchRecords, feedbackDocs] = await Promise.all([
+    StudentFeedbackBatch.find({ school: schoolId }),
+    StudentFeedback.find({ school: schoolId }).select('grade'),
   ])
 
+  return computeGradeFeedbackProgressFromDocs(batchRecords, feedbackDocs)
+}
+
+// Pure version of getSchoolStatus() below — see computeGradeFeedbackProgressFromDocs
+// for why this split exists.
+export function getSchoolStatusFromProgress(teacherFeedbackCount, gradeProgress) {
   const teacherFeedbackCompleted = teacherFeedbackCount >= ENABLED_TOURS.length
 
   // Student Feedback is only "completed" once EVERY required grade (6–12)
@@ -64,6 +71,15 @@ export async function getSchoolStatus(schoolId) {
   const studentFeedbackCompleted = allRequiredGradesPresent && requiredGradeProgress.every((grade) => grade.targetMet)
 
   return { teacherFeedbackCompleted, studentFeedbackCompleted }
+}
+
+export async function getSchoolStatus(schoolId) {
+  const [teacherFeedbackCount, gradeProgress] = await Promise.all([
+    TeacherFeedback.countDocuments({ school: schoolId }),
+    computeGradeFeedbackProgress(schoolId),
+  ])
+
+  return getSchoolStatusFromProgress(teacherFeedbackCount, gradeProgress)
 }
 
 export async function getDashboardOverview(schoolId) {

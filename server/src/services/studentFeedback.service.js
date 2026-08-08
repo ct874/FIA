@@ -1,11 +1,32 @@
-import crypto from 'node:crypto'
+import { School } from '../models/school.model.js'
 import { StudentFeedback } from '../models/studentFeedback.model.js'
 import { StudentFeedbackBatch } from '../models/studentFeedbackBatch.model.js'
 import { TOUR_BY_ID } from '../constants/tours.js'
 import { computeGradeFeedbackProgress } from './teacherStatus.service.js'
 import { computeRequiredFeedbackCount } from '../utils/studentFeedbackTarget.js'
+import { formatStudentDummyId } from '../utils/studentDummyId.js'
 import { getCurrentMonthName, getCurrentFinancialYear } from '../utils/academicPeriod.js'
 import { ApiError } from '../utils/ApiError.js'
+
+// Atomically claims the next Student Dummy ID sequence number for a school —
+// $inc on the School document is a single atomic Mongo operation, so two
+// concurrent submissions (same teacher, two tabs, or two different
+// sessions) can never be handed the same number, and the sequence is
+// per-school and never resets across grades.
+async function claimNextStudentDummyId(school) {
+  const updated = await School.findByIdAndUpdate(
+    school._id,
+    { $inc: { studentDummyIdSequence: 1 } },
+    { new: true },
+  )
+  if (!updated) {
+    // The school was deleted between authentication and this write — an
+    // edge case, not a normal failure, but fail loudly instead of crashing
+    // on `updated.studentDummyIdSequence` with a confusing TypeError.
+    throw new ApiError(404, 'School not found.')
+  }
+  return formatStudentDummyId(school.schoolName, updated.studentDummyIdSequence)
+}
 
 const YES_NO_MAYBE = ['Yes', 'No', 'Maybe']
 
@@ -61,12 +82,14 @@ export async function submitStudentFeedback(school, { grade, tours }) {
     }
   })
 
+  const studentDummyId = await claimNextStudentDummyId(school)
+
   const created = await StudentFeedback.create({
     school: school._id,
     udise: school.udise,
     schoolName: school.schoolName,
     grade: normalizedGrade,
-    studentDummyId: crypto.randomUUID(),
+    studentDummyId,
     month: getCurrentMonthName(),
     financialYear: getCurrentFinancialYear(),
     tours: tourAnswers,

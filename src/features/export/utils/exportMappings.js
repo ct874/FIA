@@ -9,15 +9,16 @@
 
 import { TOURS } from '../../../data/schoolRecords.schema'
 
-// Career Tour -> numeric export code (client's official Form 4 mapping).
-// Codes are reserved for AI Career Tour / Amazon Prime even while those
-// tours are disabled (schoolRecords.schema.js `enabled: false`), so turning
-// one on later never shifts anyone else's code.
+// Career Tour -> numeric export code (client's official mapping):
+// AWS = 1, Robotics = 2, Music = 3. Codes are reserved for AI Career Tour /
+// Amazon Prime even while those tours are disabled (schoolRecords.schema.js
+// `enabled: false`), so turning one on later never shifts anyone else's
+// code — they just take whatever codes are left over (4, 5), never 1-3.
 export const CAREER_TOUR_EXPORT_CODE = {
   [TOURS.AWS.id]: 1,
   [TOURS.FC.id]: 2,
-  [TOURS.AI.id]: 3,
-  [TOURS.AM.id]: 4,
+  [TOURS.AM.id]: 3,
+  [TOURS.AI.id]: 4,
   [TOURS.PRIME.id]: 5,
 }
 
@@ -76,6 +77,17 @@ export const MONTH_EXPORT_CODE = {
 export function getMonthExportCode(month) {
   return MONTH_EXPORT_CODE[month] ?? ''
 }
+
+// Fixed "Financial Year" value required in the Student/Teacher Feedback
+// CSV export ONLY — every exported row must show this exact UUID instead of
+// the real financial year (e.g. "2026-27") that's actually stored on the
+// record. This is an export-column substitution, not a database change:
+// the real financialYear ("2026-27"-style) stays untouched in
+// StudentFeedback/TeacherFeedback/StudentFeedbackBatch documents, since
+// other features (notably the Target Panel's getTargetProgress(), which
+// filters TeacherFeedback/StudentFeedbackBatch by the real current
+// financial year) depend on that real value to keep working.
+export const FIXED_FEEDBACK_FINANCIAL_YEAR = '3ab7f1d4-e2c8-47d9-a1b6-8f0c5d2e9a73'
 
 // NOTE: Institution Type (School = 1, Beyond School = 2) has no mapping
 // helper here — the admin's Programme Setup screen (ProgrammeSetupCard.jsx)

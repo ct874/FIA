@@ -308,6 +308,10 @@ export const en = {
       searchPlaceholder: 'Search schools...',
       emptyAll: 'No Schools Registered Yet',
       emptySearch: 'No schools match your search.',
+      saveChanges: 'Save Changes',
+      passwordPrompt: 'Enter the Super Admin password to save these District Code / Postal Code changes.',
+      saveSuccess: 'District Code / Postal Code saved.',
+      saveError: 'Could not save the district code. Please try again.',
     },
     exportPreview: {
       title: 'Export Preview',
@@ -333,6 +337,11 @@ export const en = {
       showingFirst: ' — showing first {{limit}}',
       missingCell: '⚠ missing',
       noRows: 'No rows match the current filter.',
+      afePreparing: 'Preparing AFE Official Export...',
+      afeReady: '✓ Export ready',
+      afeLoadError: 'Could not load the AFE (Official) preview.',
+      afeDownloadError: 'Could not generate the AFE CSV (Official) export.',
+      afeIgnoresDateFilter: 'The date range filter above applies only to the Student/Teacher Feedback CSVs — AFE (Official) always exports the full, current dataset.',
     },
     dangerZone: {
       title: 'Danger Zone — Delete Data Permanently',

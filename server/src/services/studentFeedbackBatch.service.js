@@ -27,14 +27,19 @@ function unionTours(existingTours, incomingTours) {
 }
 
 // Starts (or tops up) the Student Feedback batch for a grade — how many
-// students' feedback the teacher intends to collect, in which language.
-// Every batch automatically covers all of ALL_TOURS — there is no tour
-// selection to accept or validate here anymore (any `tourIds` a caller
-// still sends is simply ignored; nothing depends on it). Repeat submissions
-// for the same grade never overwrite or get rejected — they merge into the
-// same document: student count adds up, tours union (no duplicates, and
-// picks up any newly-enabled tour on a later top-up), and language/month/
-// financialYear move forward to the latest submission.
+// students' feedback the teacher intends to collect. Every batch
+// automatically covers all of ALL_TOURS — there is no tour selection to
+// accept or validate here anymore (any `tourIds` a caller still sends is
+// simply ignored; nothing depends on it). Repeat submissions for the same
+// grade never overwrite or get rejected — they merge into the same
+// document: student count adds up, tours union (no duplicates, and picks up
+// any newly-enabled tour on a later top-up), and month/financialYear move
+// forward to the latest submission.
+// `language` is no longer collected from the teacher (the "In which
+// language did students watch the Career Tour?" question was removed from
+// the Start Feedback form) — still accepted here and passed through as-is
+// if an older/other caller happens to send one, but never required, and
+// never overwrites an already-stored value with a blank one on top-up.
 export async function startStudentFeedbackBatch(school, { grade, studentCount, language }) {
   const normalizedGrade = String(grade ?? '').trim()
   if (!normalizedGrade || !GRADES.includes(normalizedGrade)) {
@@ -42,9 +47,6 @@ export async function startStudentFeedbackBatch(school, { grade, studentCount, l
   }
   if (!Number.isFinite(Number(studentCount)) || Number(studentCount) <= 0) {
     throw new ApiError(400, 'Enter the number of students.')
-  }
-  if (!language || !String(language).trim()) {
-    throw new ApiError(400, 'Select the Career Tour language.')
   }
 
   const month = getCurrentMonthName()
@@ -55,7 +57,7 @@ export async function startStudentFeedbackBatch(school, { grade, studentCount, l
   if (existing) {
     existing.studentCount += Number(studentCount)
     existing.tours = unionTours(existing.tours, ALL_TOURS)
-    existing.language = language
+    if (language) existing.language = language
     existing.month = month
     existing.financialYear = financialYear
     await existing.save()
@@ -69,7 +71,7 @@ export async function startStudentFeedbackBatch(school, { grade, studentCount, l
     grade: normalizedGrade,
     studentCount: Number(studentCount),
     tours: ALL_TOURS,
-    language,
+    language: language || '',
     month,
     financialYear,
   })

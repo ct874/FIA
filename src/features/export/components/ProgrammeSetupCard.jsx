@@ -13,6 +13,12 @@ export default function ProgrammeSetupCard({ onSaved, directoryVersion }) {
   const [form, setForm] = useState(loadProgrammeSetup)
   const [isSaved, setIsSaved] = useState(false)
 
+  // Global Settings and Session Duration are now VIEW ONLY — every field
+  // below carries `disabled`, so these handlers never actually fire from
+  // the UI anymore. Left in place (rather than removed) since nothing else
+  // about this component's behavior is meant to change, and the disabled
+  // inputs still need a value/onChange pair to render correctly as
+  // controlled inputs.
   const handleChange = (field) => (event) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }))
     setIsSaved(false)
@@ -67,54 +73,63 @@ export default function ProgrammeSetupCard({ onSaved, directoryVersion }) {
             label={t('export.programmeSetup.financialYear')}
             value={form.financialYear}
             onChange={handleChange('financialYear')}
+            disabled
           />
           <TextInput
             id="partnerName"
             label={t('export.programmeSetup.partnerName')}
             value={form.partnerName}
             onChange={handleChange('partnerName')}
+            disabled
           />
           <TextInput
             id="countryCode"
             label={t('export.programmeSetup.countryCode')}
             value={form.countryCode}
             onChange={handleChange('countryCode')}
+            disabled
           />
           <TextInput
             id="deviceId"
             label={t('export.programmeSetup.deviceId')}
             value={form.deviceId}
             onChange={handleChange('deviceId')}
+            disabled
           />
           <TextInput
             id="institutionType"
             label={t('export.programmeSetup.institutionType')}
             value={form.institutionType}
             onChange={handleChange('institutionType')}
+            disabled
           />
           <TextInput
             id="underservedReach"
             label={t('export.programmeSetup.underservedReach')}
             value={form.underservedReach}
             onChange={handleChange('underservedReach')}
+            disabled
           />
           <TextInput
             id="dataCollectionMethod"
             label={t('export.programmeSetup.dataCollectionMethod')}
             value={form.dataCollectionMethod}
             onChange={handleChange('dataCollectionMethod')}
+            disabled
           />
           <TextInput
             id="language"
             label={t('export.programmeSetup.language')}
             value={form.language}
             onChange={handleChange('language')}
+            disabled
           />
           <TextInput
             id="schoolType"
             label={t('export.programmeSetup.schoolType')}
             value={form.schoolType}
             onChange={handleChange('schoolType')}
+            disabled
           />
         </div>
       </div>
@@ -133,6 +148,7 @@ export default function ProgrammeSetupCard({ onSaved, directoryVersion }) {
               min="0"
               value={form.tourDurations[tour.id]}
               onChange={handleDurationChange(tour.id)}
+              disabled
             />
           ))}
         </div>

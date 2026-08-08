@@ -41,6 +41,13 @@ const studentFeedbackSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
+// Safety net, not the primary guarantee — studentFeedback.service.js already
+// claims each Dummy ID atomically (School.studentDummyIdSequence via $inc),
+// which is what actually prevents collisions. This index just makes any
+// future bug or direct data insertion fail loudly instead of silently
+// producing two students with the same ID at the same school.
+studentFeedbackSchema.index({ school: 1, studentDummyId: 1 }, { unique: true })
+
 studentFeedbackSchema.methods.toSafeJSON = function toSafeJSON() {
   return {
     id: this._id,

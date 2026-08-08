@@ -22,7 +22,11 @@ const studentFeedbackBatchSchema = new mongoose.Schema(
     grade: { type: String, required: true, trim: true },
     studentCount: { type: Number, required: true, min: 1 },
     tours: { type: [tourRefSchema], default: [] },
-    language: { type: String, required: true, trim: true },
+    // No longer collected from the teacher (the "In which language did
+    // students watch the Career Tour?" question was removed from the Start
+    // Feedback form) — kept as an optional field, never required, so older
+    // batches that do have a value keep displaying it.
+    language: { type: String, trim: true, default: '' },
 
     month: { type: String, required: true },
     financialYear: { type: String, required: true },

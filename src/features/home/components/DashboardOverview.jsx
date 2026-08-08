@@ -62,18 +62,13 @@ export default function DashboardOverview() {
         <ErrorState message={error} onRetry={refetch} />
       ) : (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {/* "Target Students" and "Student Feedback Responses" cards were
+              removed from this grid per product request — their underlying
+              computeOverviewSummary() values (totalTargetStudents,
+              studentResponses) are intentionally left untouched below since
+              other consumers still rely on them. */}
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <SummaryCard accent label={t('home.summary.schools')} value={summary.schoolsCount} />
-            <SummaryCard
-              accent
-              label={t('home.summary.targetStudents')}
-              value={summary.totalTargetStudents.toLocaleString()}
-            />
-            <SummaryCard
-              accent
-              label={t('home.summary.studentFeedbackResponses')}
-              value={summary.studentResponses.toLocaleString()}
-            />
             <SummaryCard
               accent
               label={t('home.summary.teacherResponses')}

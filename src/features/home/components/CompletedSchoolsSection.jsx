@@ -55,9 +55,13 @@ export default function CompletedSchoolsSection() {
         <ErrorState message={error} onRetry={refetch} />
       ) : (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {/* "Target Students" card removed from this section per product
+              request — computeCompletedSchoolsSummary()'s totalTarget value
+              is intentionally left untouched below since it's harmless,
+              unused dead weight rather than something worth risking a
+              wider refactor to remove. */}
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <SummaryCard label={t('home.completed.completedSchools')} value={summary.completedSchools} />
-            <SummaryCard label={t('home.completed.targetStudents')} value={summary.totalTarget.toLocaleString()} />
             <SummaryCard label={t('home.completed.totalResponses')} value={summary.totalResponses.toLocaleString()} />
             <SummaryCard label={t('home.completed.averageCsat')} value={summary.avgCsat.toFixed(1)} />
             <SummaryCard label={t('home.completed.averageNps')} value={`${summary.avgNps}%`} />
