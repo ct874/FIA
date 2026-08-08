@@ -65,10 +65,17 @@ const schoolSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
-schoolSchema.pre('save', async function hashPassword(next) {
-  if (!this.isModified('password') || !this.password) return next()
+// NOTE: this is an async hook — Mongoose does NOT pass a `next` callback to
+// an async pre-hook (it awaits the returned promise instead), so this must
+// never declare/call a `next` parameter (that was the exact bug: any
+// School.save() where the password wasn't being changed hit `return
+// next()` with `next` undefined, throwing "next is not a function" and
+// failing the save with a 500 — including the District Code/Postal Code
+// save flow, which never touches `password` at all). Matches the already-
+// correct pattern in superAdmin.model.js.
+schoolSchema.pre('save', async function hashPassword() {
+  if (!this.isModified('password') || !this.password) return
   this.password = await bcrypt.hash(this.password, SALT_ROUNDS)
-  next()
 })
 
 schoolSchema.methods.comparePassword = async function comparePassword(candidatePassword) {
