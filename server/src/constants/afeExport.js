@@ -26,7 +26,7 @@ export const AFE_TOUR_SEQUENCE = ['CT-L-AWS-01', 'CT-L-FC-01', 'CT-L-AM-01']
 export const AFE_TOUR_META = {
   'CT-L-AWS-01': { code: 1, hostId: 'AFE-IN-AWS-YT-HI-2025', durationMinutes: 27 },
   'CT-L-FC-01': { code: 2, hostId: 'AFE-IN-FC-YT-HI-2025', durationMinutes: 48 },
-  'CT-L-AM-01': { code: 3, hostId: 'AFE-IN-AM-YT-HI-2026', durationMinutes: 45 },
+  'CT-L-AM-01': { code: 3, hostId: 'AFE-IN-AM-YT-HI-2026', durationMinutes: 30 },
 }
 
 export function getAfeTourMeta(tourId) {

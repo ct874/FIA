@@ -15,7 +15,7 @@ export const DEFAULT_PROGRAMME_SETUP = {
   tourDurations: {
     [TOURS.AWS.id]: 27,
     [TOURS.FC.id]: 48,
-    [TOURS.AM.id]: 45,
+    [TOURS.AM.id]: 30,
   },
 }
 
