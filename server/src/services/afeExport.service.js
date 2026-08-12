@@ -18,7 +18,6 @@ import { StudentFeedbackBatch } from '../models/studentFeedbackBatch.model.js'
 import { StudentFeedback } from '../models/studentFeedback.model.js'
 import { TeacherFeedback } from '../models/teacherFeedback.model.js'
 import { sortBySchoolName } from '../utils/feedbackSort.js'
-import { computeRequiredFeedbackCount } from '../utils/studentFeedbackTarget.js'
 import { getMonthNumber } from '../utils/academicPeriod.js'
 import { computeGradeFeedbackProgressFromDocs, getSchoolStatusFromProgress } from './teacherStatus.service.js'
 import {
@@ -30,7 +29,6 @@ import {
 import { AFE_OFFICIAL_COLUMNS, AFE_ALWAYS_EMPTY_COLUMNS } from '../constants/afeOfficialColumns.js'
 import { calculateCsat } from '../utils/csat.js'
 import { calculateItp } from '../utils/itp.js'
-import { calculateNps } from '../utils/nps.js'
 import {
   AFE_TOUR_SEQUENCE,
   getAfeTourMeta,
@@ -51,6 +49,7 @@ import {
   AFE_UNIT_TYPE_TEACHER,
   AFE_UNIT_TYPE_BOTH,
   AFE_ROWS_PER_CLASS,
+  AFE_RESPONSE_RATE_PERCENTAGE,
 } from '../constants/afeExport.js'
 import { ApiError } from '../utils/ApiError.js'
 
@@ -83,15 +82,16 @@ function calculateItpForExport(scores) {
   return result === null ? '' : result
 }
 
-// educator_nps must be the calculated NPS (% Promoters - % Detractors),
-// never the teacher's raw 0-10 rating passed straight through — see
-// utils/nps.js. Applied to whichever TeacherFeedback response(s) feed this
-// row (currently always exactly one — the latest per tour, see
-// teacherByTour below); the same categorization formula applies regardless
-// of how many responses are being summarized.
-function calculateNpsForExport(scores) {
-  const result = calculateNps(scores)
-  return result === null ? '' : result
+// educator_nps must be the teacher's ORIGINAL raw 0-10 rating for the AFE
+// CSV (Official) export specifically — per client correction, this is now a
+// deliberate exception to the platform's normal NPS methodology (calculated
+// % Promoters - % Detractors, see utils/nps.js / calculateNps), which
+// remains unchanged everywhere else in the app. Do NOT recalculate this
+// field, and do NOT apply the Teacher Feedback export's separate +1 display
+// transformation (see exportFormats.js) here — this must stay exactly what
+// the teacher selected.
+function educatorNpsForExport(teacherDoc) {
+  return teacherDoc ? teacherDoc.recommendScore : ''
 }
 
 function groupBySchool(docs) {
@@ -228,7 +228,6 @@ export async function buildAfeOfficialRows() {
       const gradeStudents = studentsByGrade.get(grade)
       const batch = batchByGrade.get(grade)
       const studentCount = batch ? batch.studentCount : ''
-      const requiredTarget = batch ? computeRequiredFeedbackCount(batch.studentCount) : null
       classSequence += 1
       const classSequenceStr = String(classSequence).padStart(3, '0')
 
@@ -275,10 +274,13 @@ export async function buildAfeOfficialRows() {
         row.grade_of_students = grade
         row.student_csat = calculateCsatForExport(matchingAnswers.map((answer) => answer.enjoyment))
         row.itp_avg = calculateItpForExport(matchingAnswers.map((answer) => answer.interestInFutureCareer))
-        row.response_rate_percentage = requiredTarget
-          ? Math.round((matchingAnswers.length / requiredTarget) * 100)
-          : ''
-        row.educator_nps = teacherDoc ? calculateNpsForExport([teacherDoc.recommendScore]) : ''
+        // Client-mandated fixed value, per row, regardless of actual student
+        // response counts — see AFE_RESPONSE_RATE_PERCENTAGE. Do not derive
+        // this from matchingAnswers.length/requiredTarget (that calculation
+        // remains valid for other parts of the app but must not feed this
+        // column).
+        row.response_rate_percentage = AFE_RESPONSE_RATE_PERCENTAGE
+        row.educator_nps = educatorNpsForExport(teacherDoc)
         row.month_name = monthNumber
         row.student_count = studentCount
         // Class-level identifier: identical for all 3 tour rows of the same

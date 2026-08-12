@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import SearchInput from '../ui/SearchInput'
 import TableHeader from './TableHeader'
 import TablePagination from './TablePagination'
+import TableFillerRows from './TableFillerRows'
+import { getFillerRowCount } from './tableRowFiller'
 import { useLanguage } from '../../hooks/useLanguage'
 
 export default function DashboardTable({
@@ -119,6 +121,8 @@ export default function DashboardTable({
                 </td>
               </tr>
             )}
+
+            <TableFillerRows count={getFillerRowCount(paginatedData.length, pageSize)} colSpan={columns.length} />
           </tbody>
         </table>
       </div>

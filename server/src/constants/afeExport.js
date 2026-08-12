@@ -50,6 +50,11 @@ export const AFE_SCHOOL_TYPE = 1
 export const AFE_LANGUAGE = 2
 export const AFE_ACADEMIC_YEAR_ID = '3ab7f1d4-e2c8-47d9-a1b6-8f0c5d2e9a73'
 
+// response_rate_percentage is a client-mandated fixed value for every row of
+// this export — never derived from actual student response counts (see
+// afeExport.service.js). Do not replace with a calculated response rate.
+export const AFE_RESPONSE_RATE_PERCENTAGE = 40
+
 // unit_type is additive: Student(1) + Teacher(2) = Both(3). Teacher data
 // only ever attaches to a school's FIRST class block (its first
 // AFE_ROWS_PER_CLASS rows) — see afeExport.service.js — never duplicated

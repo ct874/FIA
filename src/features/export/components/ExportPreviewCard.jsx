@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as XLSX from 'xlsx'
 import Spinner from '../../../components/ui/Spinner'
 import ErrorState from '../../../components/ui/ErrorState'
+import TablePagination from '../../../components/table/TablePagination'
+import TableFillerRows from '../../../components/table/TableFillerRows'
+import { getFillerRowCount } from '../../../components/table/tableRowFiller'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
 import { useLanguage } from '../../../hooks/useLanguage'
 import { loadProgrammeSetup } from '../utils/programmeSetup'
@@ -16,7 +19,13 @@ import { fetchAfeOfficialPreview, downloadAfeOfficialCsv, normalizeBlobError } f
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { getMonthlyCyclePresets, formatDateForInput, parseDateFromInput } from '../utils/dateRangeCycles'
 
-const PREVIEW_LIMIT = 50
+// Bottom "Export Preview" section reserves visual space for a full page of
+// PREVIEW_PAGE_SIZE rows (see TableFillerRows) so the table doesn't visually
+// shrink on a short final page — the actual per-tab dataset (and everything
+// the CSV/workbook downloads below read from) is always the complete,
+// unpaginated rowsByTab/feedbackRowsByTab data; only this on-screen preview
+// table is paginated.
+const PREVIEW_PAGE_SIZE = 20
 
 const SECONDARY_BUTTON =
   'inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-all duration-200 ease-out hover:bg-slate-100'
@@ -51,6 +60,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
   const [activeTab, setActiveTab] = useState('studentFeedback')
   const [range, setRange] = useState({ start: null, end: null })
   const [refreshKey, setRefreshKey] = useState(0)
+  const [previewPage, setPreviewPage] = useState(1)
 
   // The AFE CSV (Official) dataset is entirely backend-generated (school
   // grouping, completion dates, session IDs, validation — see
@@ -126,12 +136,31 @@ export default function ExportPreviewCard({ directoryVersion }) {
 
   const activeRows = rowsByTab[activeTab]
   const activeColumns = columnsByTab[activeTab]
-  const previewRows = activeRows.slice(0, PREVIEW_LIMIT)
+  const previewTotalPages = Math.max(1, Math.ceil(activeRows.length / PREVIEW_PAGE_SIZE))
+  const previewCurrentPage = Math.min(previewPage, previewTotalPages)
+  const previewRows = activeRows.slice(
+    (previewCurrentPage - 1) * PREVIEW_PAGE_SIZE,
+    previewCurrentPage * PREVIEW_PAGE_SIZE,
+  )
 
   const handleRefresh = () => {
     setRefreshKey((key) => key + 1)
     setIsAfeLoading(true)
+    setPreviewPage(1)
     refetch()
+  }
+
+  // Switching tabs / changing the date range swaps in a different dataset —
+  // reset back to page 1 so the preview never lands on a now out-of-range
+  // page, same as DashboardTable resets to page 1 on search.
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey)
+    setPreviewPage(1)
+  }
+
+  const handleRangeChange = (updater) => {
+    setRange(updater)
+    setPreviewPage(1)
   }
 
   const handleDownload = (key, columns, filenamePrefix) => {
@@ -180,6 +209,8 @@ export default function ExportPreviewCard({ directoryVersion }) {
   }
 
   const hasActiveRange = Boolean(range.start || range.end)
+  const isPreviewTableVisible =
+    activeTab === 'afe' ? !isAfeLoading && !afeError : !isLoading && !error
 
   return (
     <section className="mt-8 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
@@ -255,7 +286,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
               type="date"
               value={formatDateForInput(range.start)}
               onChange={(event) =>
-                setRange((prev) => ({ ...prev, start: parseDateFromInput(event.target.value) }))
+                handleRangeChange((prev) => ({ ...prev, start: parseDateFromInput(event.target.value) }))
               }
               className={DATE_INPUT}
             />
@@ -269,7 +300,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
               type="date"
               value={formatDateForInput(range.end)}
               onChange={(event) =>
-                setRange((prev) => ({ ...prev, end: parseDateFromInput(event.target.value) }))
+                handleRangeChange((prev) => ({ ...prev, end: parseDateFromInput(event.target.value) }))
               }
               className={DATE_INPUT}
             />
@@ -279,7 +310,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
             <button
               key={preset.label}
               type="button"
-              onClick={() => setRange({ start: preset.start, end: preset.end })}
+              onClick={() => handleRangeChange({ start: preset.start, end: preset.end })}
               className={PRESET_BUTTON}
             >
               {preset.label}
@@ -289,7 +320,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
           {hasActiveRange && (
             <button
               type="button"
-              onClick={() => setRange({ start: null, end: null })}
+              onClick={() => handleRangeChange({ start: null, end: null })}
               className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors duration-150 hover:text-slate-800"
             >
               {t('export.exportPreview.clear')}
@@ -306,7 +337,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
           <button
             key={tab.key}
             type="button"
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => handleTabChange(tab.key)}
             className={`-mb-px rounded-t-xl border-b-2 px-4 py-2 text-sm font-medium transition-all duration-150 ease-out ${
               activeTab === tab.key
                 ? 'border-blue-600 text-blue-600'
@@ -322,7 +353,6 @@ export default function ExportPreviewCard({ directoryVersion }) {
         {activeRows.length === 1
           ? t('export.exportPreview.rowCount', { count: activeRows.length })
           : t('export.exportPreview.rowCountPlural', { count: activeRows.length })}
-        {activeRows.length > PREVIEW_LIMIT ? t('export.exportPreview.showingFirst', { limit: PREVIEW_LIMIT }) : ''}
       </p>
 
       {activeTab === 'afe' && isAfeLoading ? (
@@ -382,9 +412,25 @@ export default function ExportPreviewCard({ directoryVersion }) {
                   </td>
                 </tr>
               )}
+
+              <TableFillerRows
+                count={getFillerRowCount(previewRows.length, PREVIEW_PAGE_SIZE)}
+                colSpan={activeColumns.length}
+                cellClassName="px-3 py-2"
+              />
             </tbody>
           </table>
         </div>
+      )}
+
+      {isPreviewTableVisible && (
+        <TablePagination
+          page={previewCurrentPage}
+          totalPages={previewTotalPages}
+          totalItems={activeRows.length}
+          pageSize={PREVIEW_PAGE_SIZE}
+          onPageChange={setPreviewPage}
+        />
       )}
     </section>
   )

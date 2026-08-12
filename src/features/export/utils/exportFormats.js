@@ -103,6 +103,17 @@ function sortSchoolsForExport(schools) {
   }))
 }
 
+// The Teacher Feedback export/file displays the teacher's original 0-10
+// recommendScore rating +1 (e.g. 8 -> 9) — a display-only transformation for
+// this export specifically, per client requirement. Capped at 10 so the
+// already-maximum rating (10) doesn't produce an out-of-scale 11. This must
+// NOT touch the underlying stored TeacherFeedback.recommendScore (which stays
+// the teacher's original raw rating everywhere else, including the AFE CSV
+// (Official) export's educator_nps — see server/src/services/afeExport.service.js).
+function displayTeacherRecommendScore(recommendScore) {
+  return typeof recommendScore === 'number' ? Math.min(recommendScore + 1, 10) : recommendScore
+}
+
 // District Code comes straight from the school's own backend-saved value
 // (school.districtCode, from Export Data -> Programme Setup -> Per-School
 // District Code & Postal Code) — never a browser-only/fake value, and never
@@ -187,7 +198,7 @@ export function buildFeedbackRows(schools, setup, unit, range) {
           'After watching the career tour how interested are you in learning more about careers of the future? (1 = Not at all interested to 5 = Very interested)': '',
           'Did the tour make you want to explore a career of the future for yourself?': '',
           'Would you like to see more tours like this?': '',
-          'On a scale of 0-10 how likely are you to recommend to this Tour to other teachers/schools?  (0-Not at all likely 10-Extremely likely)': row.recommendScore,
+          'On a scale of 0-10 how likely are you to recommend to this Tour to other teachers/schools?  (0-Not at all likely 10-Extremely likely)': displayTeacherRecommendScore(row.recommendScore),
           'How satisfied are you with the resources provided (Teacher Toolkit worksheets facilitation guide)?  (1 = Extremely dissatisfied to 5 = Extremely satisfied)': row.satisfactionResources,
           'How easy was it to integrate this tour into your classroom lesson plan? (1 = Extremely difficult to 5 = Extremely easy)': row.easeIntegration,
           'What was the biggest benefit for your students from this tour?': row.biggestBenefit || '',
