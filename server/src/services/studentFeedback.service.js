@@ -4,6 +4,7 @@ import { StudentFeedbackBatch } from '../models/studentFeedbackBatch.model.js'
 import { TOUR_BY_ID } from '../constants/tours.js'
 import { computeGradeFeedbackProgress } from './teacherStatus.service.js'
 import { computeRequiredFeedbackCount } from '../utils/studentFeedbackTarget.js'
+import { getTargetPercentForDistrict } from './districtFeedbackTarget.service.js'
 import { formatStudentDummyId } from '../utils/studentDummyId.js'
 import { getCurrentMonthName, getCurrentFinancialYear } from '../utils/academicPeriod.js'
 import { ApiError } from '../utils/ApiError.js'
@@ -58,10 +59,14 @@ export async function submitStudentFeedback(school, { grade, tours }) {
     throw new ApiError(400, `Start a Student Feedback batch for Grade ${normalizedGrade} first.`)
   }
 
-  // Never trust the frontend's own gating alone — only 40% of the class may
-  // give feedback, so re-check against the real submitted count on every
-  // request, even if someone bypasses the UI entirely.
-  const requiredCount = computeRequiredFeedbackCount(batch.studentCount)
+  // Never trust the frontend's own gating alone — only the school's
+  // district-configured percentage of the class may give feedback (40% by
+  // default, for any district the Super Admin hasn't configured — see
+  // districtFeedbackTarget.service.js), so re-check against the real
+  // submitted count on every request, even if someone bypasses the UI
+  // entirely.
+  const targetPercent = await getTargetPercentForDistrict(school.district)
+  const requiredCount = computeRequiredFeedbackCount(batch.studentCount, targetPercent)
   const submittedCount = await StudentFeedback.countDocuments({ school: school._id, grade: normalizedGrade })
   if (submittedCount >= requiredCount) {
     throw new ApiError(409, 'Required student feedback for this class has already been completed.')

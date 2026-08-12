@@ -118,7 +118,11 @@ function displayTeacherRecommendScore(recommendScore) {
 // (school.districtCode, from Export Data -> Programme Setup -> Per-School
 // District Code & Postal Code) — never a browser-only/fake value, and never
 // shared across schools.
-export function buildFeedbackRows(schools, setup, unit, range) {
+//
+// `dynamicCodeMap` (optional, tourId -> code) lets a Super-Admin-created
+// tour's rows carry its real numeric export code instead of '' — see
+// exportMappings.js's buildDynamicTourCodeMap().
+export function buildFeedbackRows(schools, setup, unit, range, dynamicCodeMap) {
   const rows = []
   const sortedSchools = sortSchoolsForExport(schools)
 
@@ -148,7 +152,7 @@ export function buildFeedbackRows(schools, setup, unit, range) {
             Grade: row.grade,
             'Unit (Student/Teacher)': 1,
             'Student Dummy Id or Teacher Email': row.studentDummyId || '',
-            'Which Career Tour are you giving feedback on?': getCareerTourExportCode(row.tourId),
+            'Which Career Tour are you giving feedback on?': getCareerTourExportCode(row.tourId, dynamicCodeMap),
             'In which language did you watch the Career Tour?': FIXED_FEEDBACK_LANGUAGE_CODE,
             "How much did you enjoy this Career Tour? (1 =Didn't like it at all to 5 = Loved it)": row.enjoyment,
             'Please rate your overall experience of the tour (1 = Very Poor to 5 = Excellent)': row.overallExperience,

@@ -15,3 +15,20 @@ export const TOURS = {
 }
 
 export const ENABLED_TOURS = Object.values(TOURS).filter((tour) => tour.enabled)
+
+/**
+ * Merges the live /api/tours catalog (see useTourCatalog(), shape
+ * `{ tourId, tourName, code, durationMinutes }`) into this module's
+ * `{ id, name, enabled }` shape, additive on top of ENABLED_TOURS — AWS/
+ * Robotics/Music always come from the static list above (already present
+ * in the live catalog too, so they're de-duplicated by id, never doubled),
+ * with any Super-Admin-created tour appended after them. Falls back to
+ * exactly ENABLED_TOURS when `liveTours` hasn't loaded yet.
+ */
+export function mergeLiveTours(liveTours = []) {
+  const staticIds = new Set(ENABLED_TOURS.map((tour) => tour.id))
+  const extra = liveTours
+    .filter((tour) => !staticIds.has(tour.tourId))
+    .map((tour) => ({ id: tour.tourId, name: tour.tourName, enabled: true }))
+  return [...ENABLED_TOURS, ...extra]
+}

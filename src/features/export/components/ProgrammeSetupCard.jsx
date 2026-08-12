@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import TextInput from '../../../components/ui/TextInput'
 import PerSchoolExportCodesTable from './PerSchoolExportCodesTable'
+import ManageToursSection from './ManageToursSection'
+import DistrictFeedbackTargetSection from './DistrictFeedbackTargetSection'
 import { ENABLED_TOURS } from '../../../data/schoolRecords.schema'
 import { useLanguage } from '../../../hooks/useLanguage'
 import {
@@ -155,6 +157,10 @@ export default function ProgrammeSetupCard({ onSaved, directoryVersion }) {
       </div>
 
       <PerSchoolExportCodesTable directoryVersion={directoryVersion} />
+
+      <ManageToursSection />
+
+      <DistrictFeedbackTargetSection />
     </section>
   )
 }

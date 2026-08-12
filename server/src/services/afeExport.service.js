@@ -8,10 +8,12 @@
 // Required row hierarchy per school block (client spec — CLASS + TOUR level,
 // NOT individual student rows):
 //   For each school (alphabetical), for each Class 6 -> 12 (ascending, only
-//   classes that actually have Student Feedback), exactly 3 rows — one per
-//   tour, always AWS -> Robotics -> Music — aggregating that class+tour's
-//   student answers. The school's Teacher Feedback (per tour) attaches onto
-//   its FIRST class block only (unit_type becomes Student+Teacher=3 there),
+//   classes that actually have Student Feedback), one row per currently
+//   enabled tour, always AWS -> Robotics -> Music first (in that exact
+//   order — never re-derived, never reordered) and then any Super-Admin-
+//   created tour after them — aggregating that class+tour's student
+//   answers. The school's Teacher Feedback (per tour) attaches onto its
+//   FIRST class block only (unit_type becomes Student+Teacher=3 there),
 //   never as separate rows and never duplicated onto later classes.
 import { School } from '../models/school.model.js'
 import { StudentFeedbackBatch } from '../models/studentFeedbackBatch.model.js'
@@ -20,6 +22,7 @@ import { TeacherFeedback } from '../models/teacherFeedback.model.js'
 import { sortBySchoolName } from '../utils/feedbackSort.js'
 import { getMonthNumber } from '../utils/academicPeriod.js'
 import { computeGradeFeedbackProgressFromDocs, getSchoolStatusFromProgress } from './teacherStatus.service.js'
+import { getTargetPercentMap, DEFAULT_STUDENT_FEEDBACK_TARGET_PERCENT } from './districtFeedbackTarget.service.js'
 import {
   computeSchoolOverallStatus,
   getSchoolLastActivityDate,
@@ -30,8 +33,10 @@ import { AFE_OFFICIAL_COLUMNS, AFE_ALWAYS_EMPTY_COLUMNS } from '../constants/afe
 import { calculateCsat } from '../utils/csat.js'
 import { calculateItp } from '../utils/itp.js'
 import {
-  AFE_TOUR_SEQUENCE,
+  getAfeTourSequence,
   getAfeTourMeta,
+  getAfeRowsPerClass,
+  getAfeTourCodeSequence,
   AFE_DEVICE_ID,
   AFE_COUNTRY_CODE,
   AFE_STATE,
@@ -48,7 +53,6 @@ import {
   AFE_UNIT_TYPE_STUDENT,
   AFE_UNIT_TYPE_TEACHER,
   AFE_UNIT_TYPE_BOTH,
-  AFE_ROWS_PER_CLASS,
   AFE_RESPONSE_RATE_PERCENTAGE,
 } from '../constants/afeExport.js'
 import { ApiError } from '../utils/ApiError.js'
@@ -157,11 +161,14 @@ function buildSharedRowFields({ school, tourMeta, unitType, completionDate, subm
 // TeacherFeedback, each unfiltered + `.lean()`), regardless of how many
 // schools exist — no N+1, no repeated per-school lookups.
 export async function buildAfeOfficialRows() {
-  const [schools, allBatches, allStudentFeedback, allTeacherFeedback] = await Promise.all([
+  const [schools, allBatches, allStudentFeedback, allTeacherFeedback, targetPercentByDistrict] = await Promise.all([
     School.find().lean(),
     StudentFeedbackBatch.find().lean(),
     StudentFeedback.find().lean(),
     TeacherFeedback.find().lean(),
+    // One query for every configured district, instead of one findOne() per
+    // school below — this export can cover every school in the program.
+    getTargetPercentMap(),
   ])
 
   const batchesBySchool = groupBySchool(allBatches)
@@ -182,9 +189,15 @@ export async function buildAfeOfficialRows() {
     // standalone Teacher block.)
     if (studentDocs.length === 0) return
 
+    // Only affects the internal "is this school/grade done" determination
+    // used below for completion_date — never any exported column value
+    // (response_rate_percentage stays the client-mandated fixed
+    // AFE_RESPONSE_RATE_PERCENTAGE regardless — see below).
+    const targetPercent = targetPercentByDistrict.get(school.district) ?? DEFAULT_STUDENT_FEEDBACK_TARGET_PERCENT
     const gradeProgress = computeGradeFeedbackProgressFromDocs(
       batchDocs,
       studentDocs.map((doc) => ({ grade: doc.grade })),
+      targetPercent,
     )
     const status = getSchoolStatusFromProgress(teacherDocs.length, gradeProgress)
     const isCompleted = computeSchoolOverallStatus(status) === SCHOOL_STATUS.COMPLETED
@@ -246,7 +259,7 @@ export async function buildAfeOfficialRows() {
         : ''
       const monthNumber = latestGradeSubmission ? getMonthNumber(latestGradeSubmission.month) : ''
 
-      AFE_TOUR_SEQUENCE.forEach((tourId) => {
+      getAfeTourSequence().forEach((tourId) => {
         const tourMeta = getAfeTourMeta(tourId)
         const matchingAnswers = gradeStudents
           .map((doc) => doc.tours.find((tour) => tour.tourId === tourId))
@@ -354,8 +367,9 @@ export function validateAfeOfficialRows(rows) {
     fixedValueIssue(issues, index, 'video_completion_rate', row.video_completion_rate, AFE_VIDEO_COMPLETION_RATE)
     fixedValueIssue(issues, index, 'academic_year', row.academic_year, AFE_ACADEMIC_YEAR_ID)
 
-    if (![1, 2, 3].includes(row.product_name) || row.product_name !== row.tour_id) {
-      issues.push(`Row ${index}: product_name/tour_id must both be 1 (AWS), 2 (Robotics), or 3 (Music) and match — got product_name=${row.product_name}, tour_id=${row.tour_id}.`)
+    const knownTourCodes = getAfeTourCodeSequence()
+    if (!knownTourCodes.includes(row.product_name) || row.product_name !== row.tour_id) {
+      issues.push(`Row ${index}: product_name/tour_id must both be one of the currently offered tour codes (${knownTourCodes.join(', ')}) and match — got product_name=${row.product_name}, tour_id=${row.tour_id}.`)
     }
     if (![AFE_UNIT_TYPE_STUDENT, AFE_UNIT_TYPE_TEACHER, AFE_UNIT_TYPE_BOTH].includes(row.unit_type)) {
       issues.push(`Row ${index}: unit_type must be 1 (Student), 2 (Teacher), or 3 (Both), got ${JSON.stringify(row.unit_type)}.`)
@@ -379,10 +393,14 @@ export function validateAfeOfficialRows(rows) {
   })
 
   // Grouping/ordering invariants: schools never interleaved, exactly
-  // AFE_ROWS_PER_CLASS (3) rows per class in AWS -> Robotics -> Music order,
-  // class order ascending, teacher-attached unit_type (2 or 3) only within a
-  // school's first class block, and session_id shared identically across
-  // all 3 tour rows of the same class.
+  // getAfeRowsPerClass() rows per class in AWS -> Robotics -> Music -> (any
+  // custom tours) order, class order ascending, teacher-attached unit_type
+  // (2 or 3) only within a school's first class block, and session_id
+  // shared identically across every tour row of the same class. Computed
+  // once, up front — the enabled-tour count/order can't change mid-export
+  // (buildAfeOfficialRows() already finished by the time this runs).
+  const rowsPerClass = getAfeRowsPerClass()
+  const tourCodeSequence = getAfeTourCodeSequence()
   let previousUdise = null
   const seenSchools = new Set()
   let positionInSchool = 0
@@ -401,13 +419,13 @@ export function validateAfeOfficialRows(rows) {
     }
 
     const meta = row.__meta
-    const positionInClass = positionInSchool % AFE_ROWS_PER_CLASS
-    const expectedTourCode = positionInClass + 1
+    const positionInClass = positionInSchool % rowsPerClass
+    const expectedTourCode = tourCodeSequence[positionInClass]
     if (row.tour_id !== expectedTourCode) {
       issues.push(`Row ${index}: tour order broken at position ${positionInClass} of a class for school "${row.school_udise}" — expected tour_id ${expectedTourCode}, got ${row.tour_id}.`)
     }
 
-    const isFirstClassBlock = positionInSchool < AFE_ROWS_PER_CLASS
+    const isFirstClassBlock = positionInSchool < rowsPerClass
     if (!isFirstClassBlock && row.unit_type !== AFE_UNIT_TYPE_STUDENT) {
       issues.push(`Row ${index}: unit_type ${row.unit_type} outside school "${row.school_udise}"'s first class block — Teacher data must only attach to the first class.`)
     }

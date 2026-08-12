@@ -6,6 +6,7 @@ import TablePagination from '../../../components/table/TablePagination'
 import TableFillerRows from '../../../components/table/TableFillerRows'
 import { getFillerRowCount } from '../../../components/table/tableRowFiller'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
+import { useTourCatalog } from '../../../hooks/useTourCatalog'
 import { useLanguage } from '../../../hooks/useLanguage'
 import { loadProgrammeSetup } from '../utils/programmeSetup'
 import {
@@ -15,6 +16,7 @@ import {
   downloadCsv,
   isCellMissing,
 } from '../utils/exportFormats'
+import { buildDynamicTourCodeMap } from '../utils/exportMappings'
 import { fetchAfeOfficialPreview, downloadAfeOfficialCsv, normalizeBlobError } from '../utils/afeOfficialExport'
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { getMonthlyCyclePresets, formatDateForInput, parseDateFromInput } from '../utils/dateRangeCycles'
@@ -56,6 +58,11 @@ function RefreshIcon({ className = 'h-3.5 w-3.5' }) {
 
 export default function ExportPreviewCard({ directoryVersion }) {
   const { schools, isLoading, error, refetch } = useSchoolRecords()
+  // Only Super-Admin-created tours actually need this — AWS/Robotics/Music
+  // (and the dormant AI/Prime placeholders) already resolve through
+  // exportMappings.js's fixed CAREER_TOUR_EXPORT_CODE map with no lookup.
+  const { tours: tourCatalog } = useTourCatalog()
+  const dynamicTourCodeMap = useMemo(() => buildDynamicTourCodeMap(tourCatalog), [tourCatalog])
   const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('studentFeedback')
   const [range, setRange] = useState({ start: null, end: null })
@@ -118,11 +125,11 @@ export default function ExportPreviewCard({ directoryVersion }) {
   const feedbackRowsByTab = useMemo(() => {
     if (isLoading) return { studentFeedback: [], teacherFeedback: [] }
     return {
-      studentFeedback: buildFeedbackRows(schools, setup, 'student', range),
-      teacherFeedback: buildFeedbackRows(schools, setup, 'teacher', range),
+      studentFeedback: buildFeedbackRows(schools, setup, 'student', range, dynamicTourCodeMap),
+      teacherFeedback: buildFeedbackRows(schools, setup, 'teacher', range, dynamicTourCodeMap),
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schools, setup, range, refreshKey, isLoading])
+  }, [schools, setup, range, refreshKey, isLoading, dynamicTourCodeMap])
 
   const afeColumns = afeData?.columns ?? []
   const afeRows = afeData?.rows ?? []

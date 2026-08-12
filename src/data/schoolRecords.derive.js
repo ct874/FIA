@@ -49,11 +49,15 @@ export function countUniqueTeacherResponses(entries) {
 
 /**
  * District/Tour/Month option lists for the overview dashboard's filter bar.
+ *
+ * `tours` (optional) overrides the static ENABLED_TOURS fallback with the
+ * live tour catalog (see useTourCatalog()) — additive only: AWS/Robotics/
+ * Music always resolve from ENABLED_TOURS if a live list hasn't loaded yet.
  */
-export function getOverviewFilterOptions(schools) {
+export function getOverviewFilterOptions(schools, tours = ENABLED_TOURS) {
   const districts = Array.from(new Set(schools.map((school) => school.district))).sort()
   const months = Array.from(new Set(schools.flatMap((school) => school.feedbackBatches.map((batch) => batch.month))))
-  return { districts, months, tours: ENABLED_TOURS }
+  return { districts, months, tours }
 }
 
 /**
@@ -110,8 +114,13 @@ export function computeOverviewSummary(schools, filters = {}) {
 /**
  * Per-tour CSAT/ITP/NPS averages for the "CSAT & ITP by Tour" and "NPS by
  * Tour" sections, respecting the district/tour/month filter.
+ *
+ * `tours` (optional) overrides the static ENABLED_TOURS fallback with the
+ * live tour catalog (see useTourCatalog()) so a Super-Admin-created tour
+ * gets its own breakdown card too — additive only: AWS/Robotics/Music
+ * always resolve from ENABLED_TOURS if a live list hasn't loaded yet.
  */
-export function computeTourBreakdown(schools, filters = {}) {
+export function computeTourBreakdown(schools, filters = {}, tours = ENABLED_TOURS) {
   const filteredSchools = schools.filter((school) => schoolMatchesFilters(school, filters))
   const studentRows = filteredSchools.flatMap((school) =>
     school.studentFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)),
@@ -120,7 +129,7 @@ export function computeTourBreakdown(schools, filters = {}) {
     school.teacherFeedback.filter((row) => feedbackRowMatchesFilters(row, filters)),
   )
 
-  return ENABLED_TOURS.map((tour) => {
+  return tours.map((tour) => {
     const tourStudentRows = studentRows.filter((row) => row.tourId === tour.id)
     const tourTeacherRows = teacherRows.filter((row) => row.tourId === tour.id)
 

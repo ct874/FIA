@@ -25,20 +25,35 @@ export const CAREER_TOUR_EXPORT_CODE = {
 /**
  * Numeric export code for a single tourId, or '' if the tourId is unknown
  * (keeps report generation from crashing on stale/bad data).
+ *
+ * `dynamicCodeMap` is an optional tourId -> code Map for Super-Admin-created
+ * tours (built from the live /api/tours catalog — see useTourCatalog()),
+ * checked only as a fallback after the fixed AWS/Robotics/Music/AI/Prime
+ * mapping above, which never changes.
  */
-export function getCareerTourExportCode(tourId) {
-  return CAREER_TOUR_EXPORT_CODE[tourId] ?? ''
+export function getCareerTourExportCode(tourId, dynamicCodeMap) {
+  return CAREER_TOUR_EXPORT_CODE[tourId] ?? dynamicCodeMap?.get(tourId) ?? ''
 }
 
 /**
  * Numeric export code(s) for a list of tourIds, comma-joined when more than
  * one tour applies to the same row (e.g. "AWS + Robotics" -> "1,2").
  */
-export function getCareerTourExportCodes(tourIds) {
+export function getCareerTourExportCodes(tourIds, dynamicCodeMap) {
   return tourIds
-    .map((tourId) => getCareerTourExportCode(tourId))
+    .map((tourId) => getCareerTourExportCode(tourId, dynamicCodeMap))
     .filter((code) => code !== '')
     .join(',')
+}
+
+/**
+ * Builds the tourId -> code Map that getCareerTourExportCode()'s
+ * `dynamicCodeMap` param expects, from the live tour catalog (see
+ * useTourCatalog()) — only the codes NOT already in the fixed mapping above
+ * matter here, but including all of them is harmless.
+ */
+export function buildDynamicTourCodeMap(tours) {
+  return new Map((tours ?? []).map((tour) => [tour.tourId, tour.code]))
 }
 
 // Career Tour language -> numeric export code (client's official mapping).

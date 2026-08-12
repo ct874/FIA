@@ -47,7 +47,10 @@ export default function GradeFeedbackCard({ grade, onStart }) {
 
       <div className="bg-white p-5">
         <div className="grid grid-cols-2 gap-y-3">
-          <StatCell label={t('gradeFeedbackCard.required')} value={grade.target} />
+          <StatCell
+            label={t('gradeFeedbackCard.required', { percent: Math.round(grade.targetPercent ?? 40) })}
+            value={grade.target}
+          />
           <StatCell label={t('gradeFeedbackCard.completed')} value={grade.submittedCount} />
           <StatCell label={t('gradeFeedbackCard.remaining')} value={remaining} />
           <StatCell label={t('gradeFeedbackCard.progress')} value={`${progressPercent}%`} />

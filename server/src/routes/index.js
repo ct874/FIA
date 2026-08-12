@@ -4,6 +4,8 @@ import schoolRoutes from './school.routes.js'
 import teacherAuthRoutes from './teacherAuth.routes.js'
 import teacherRoutes from './teacher.routes.js'
 import targetRoutes from './target.routes.js'
+import tourRoutes from './tours.routes.js'
+import districtFeedbackTargetRoutes from './districtFeedbackTarget.routes.js'
 
 const router = Router()
 
@@ -12,6 +14,8 @@ router.use('/schools', schoolRoutes)
 router.use('/teacher-auth', teacherAuthRoutes)
 router.use('/teacher', teacherRoutes)
 router.use('/targets', targetRoutes)
+router.use('/tours', tourRoutes)
+router.use('/district-feedback-targets', districtFeedbackTargetRoutes)
 
 // Future modules (District Management, Video Management, Reports,
 // Analytics, Settings, etc.) will register their routers here.

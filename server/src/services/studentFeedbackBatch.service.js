@@ -8,9 +8,17 @@ import { ApiError } from '../utils/ApiError.js'
 // Career Tour — teachers no longer choose which tours were shown, the
 // platform assumes every class watched all of them. This is the single
 // place that decides that, in ENABLED_TOURS' own canonical order (AWS ->
-// Robotics -> Music), so no caller/API needs to send (or can override) a
-// tour selection.
-const ALL_TOURS = ENABLED_TOURS.map((tour) => ({ tourId: tour.tourId, tourName: tour.tourName }))
+// Robotics -> Music, then any Super-Admin-created tour after them), so no
+// caller/API needs to send (or can override) a tour selection.
+//
+// Computed lazily (not a module-load-time constant) — ENABLED_TOURS is a
+// live, in-place-refreshed array (see constants/tours.js), so a tour
+// created/deleted after this module first loaded must be picked up on the
+// very next batch start, not frozen at whatever ENABLED_TOURS held at
+// import time.
+function getAllTours() {
+  return ENABLED_TOURS.map((tour) => ({ tourId: tour.tourId, tourName: tour.tourName }))
+}
 
 function unionTours(existingTours, incomingTours) {
   const merged = [...existingTours]
@@ -28,7 +36,7 @@ function unionTours(existingTours, incomingTours) {
 
 // Starts (or tops up) the Student Feedback batch for a grade — how many
 // students' feedback the teacher intends to collect. Every batch
-// automatically covers all of ALL_TOURS — there is no tour selection to
+// automatically covers all of getAllTours() — there is no tour selection to
 // accept or validate here anymore (any `tourIds` a caller still sends is
 // simply ignored; nothing depends on it). Repeat submissions for the same
 // grade never overwrite or get rejected — they merge into the same
@@ -56,7 +64,7 @@ export async function startStudentFeedbackBatch(school, { grade, studentCount, l
 
   if (existing) {
     existing.studentCount += Number(studentCount)
-    existing.tours = unionTours(existing.tours, ALL_TOURS)
+    existing.tours = unionTours(existing.tours, getAllTours())
     if (language) existing.language = language
     existing.month = month
     existing.financialYear = financialYear
@@ -70,7 +78,7 @@ export async function startStudentFeedbackBatch(school, { grade, studentCount, l
     schoolName: school.schoolName,
     grade: normalizedGrade,
     studentCount: Number(studentCount),
-    tours: ALL_TOURS,
+    tours: getAllTours(),
     language: language || '',
     month,
     financialYear,

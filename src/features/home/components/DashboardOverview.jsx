@@ -7,12 +7,14 @@ import SummaryCard from '../../../components/ui/SummaryCard'
 import TourMetricsSection from './TourMetricsSection'
 import { CsatItpCard, NpsCard } from './TourMetricCard'
 import { useSchoolRecords } from '../../../hooks/useSchoolRecords'
+import { useTourCatalog } from '../../../hooks/useTourCatalog'
 import { useLanguage } from '../../../hooks/useLanguage'
 import {
   getOverviewFilterOptions,
   computeOverviewSummary,
   computeTourBreakdown,
 } from '../../../data/schoolRecords.derive'
+import { mergeLiveTours } from '../../../data/schoolRecords.schema'
 
 const INITIAL_FILTERS = { district: '', tourId: '', month: '' }
 
@@ -29,12 +31,20 @@ function buildResultLabel(filters, options, t) {
 
 export default function DashboardOverview() {
   const { schools, isLoading, error, refetch } = useSchoolRecords()
+  // Only Super-Admin-created tours actually need this — AWS/Robotics/Music
+  // already come from the static ENABLED_TOURS fallback these two derive
+  // functions use by default.
+  const { tours: liveTours } = useTourCatalog()
+  const mergedTours = useMemo(() => mergeLiveTours(liveTours), [liveTours])
   const { t } = useLanguage()
   const [filters, setFilters] = useState(INITIAL_FILTERS)
 
-  const options = useMemo(() => getOverviewFilterOptions(schools), [schools])
+  const options = useMemo(() => getOverviewFilterOptions(schools, mergedTours), [schools, mergedTours])
   const summary = useMemo(() => computeOverviewSummary(schools, filters), [schools, filters])
-  const tourBreakdown = useMemo(() => computeTourBreakdown(schools, filters), [schools, filters])
+  const tourBreakdown = useMemo(
+    () => computeTourBreakdown(schools, filters, mergedTours),
+    [schools, filters, mergedTours],
+  )
 
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({ ...prev, [field]: value }))

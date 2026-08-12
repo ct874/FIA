@@ -1,8 +1,10 @@
 import { TeacherFeedback } from '../models/teacherFeedback.model.js'
 import { StudentFeedbackBatch } from '../models/studentFeedbackBatch.model.js'
 import { StudentFeedback } from '../models/studentFeedback.model.js'
+import { School } from '../models/school.model.js'
 import { ENABLED_TOURS } from '../constants/tours.js'
-import { computeRequiredFeedbackCount } from '../utils/studentFeedbackTarget.js'
+import { computeRequiredFeedbackCount, STUDENT_FEEDBACK_TARGET_RATE } from '../utils/studentFeedbackTarget.js'
+import { getTargetPercentForDistrict } from './districtFeedbackTarget.service.js'
 import { getGradeRank } from '../utils/feedbackSort.js'
 import { REQUIRED_GRADES } from './schoolStatus.service.js'
 
@@ -11,16 +13,20 @@ import { REQUIRED_GRADES } from './schoolStatus.service.js'
 // hold every school's batches/feedback in memory (e.g.
 // afeExport.service.js, which loads all schools' data in 4 queries total)
 // can reuse this exact rule without an extra pair of queries per school.
-// `feedbackDocs` only needs a `grade` field on each entry.
-export function computeGradeFeedbackProgressFromDocs(batchRecords, feedbackDocs) {
+// `feedbackDocs` only needs a `grade` field on each entry. `targetPercent`
+// is the school's district-configured Student Feedback Target — omit it (or
+// pass null/undefined) to fall back to the platform default (40%), exactly
+// the same behavior as before districts became configurable.
+export function computeGradeFeedbackProgressFromDocs(batchRecords, feedbackDocs, targetPercent) {
   const submittedByGrade = new Map()
   feedbackDocs.forEach((doc) => {
     submittedByGrade.set(doc.grade, (submittedByGrade.get(doc.grade) || 0) + 1)
   })
+  const resolvedTargetPercent = targetPercent ?? STUDENT_FEEDBACK_TARGET_RATE * 100
 
   return batchRecords
     .map((batch) => {
-      const target = computeRequiredFeedbackCount(batch.studentCount)
+      const target = computeRequiredFeedbackCount(batch.studentCount, resolvedTargetPercent)
       const submittedCount = submittedByGrade.get(batch.grade) || 0
       return {
         grade: batch.grade,
@@ -31,6 +37,10 @@ export function computeGradeFeedbackProgressFromDocs(batchRecords, feedbackDocs)
         createdAt: batch.createdAt,
         totalStudents: batch.studentCount,
         target,
+        // The actual configured percent (not a value derived/rounded back
+        // from target/totalStudents) — the Teacher Portal grade card
+        // displays this directly (e.g. "Required (50%)").
+        targetPercent: resolvedTargetPercent,
         submittedCount,
         targetMet: submittedCount >= target,
       }
@@ -40,18 +50,20 @@ export function computeGradeFeedbackProgressFromDocs(batchRecords, feedbackDocs)
 
 // Every submitted-count/target computation used by both the status flags and
 // the Student Feedback grade cards, so the two views can never drift apart.
-// `target` is the REQUIRED feedback count — only 40% of the class
-// (StudentFeedbackBatch.studentCount), per the project's Student Feedback
-// rule — not the full class size. `totalStudents` is kept alongside it,
-// unreduced, for anywhere that needs to show the real class size (e.g. "30
-// Total Students, 12 Required").
+// `target` is the REQUIRED feedback count — the school's district-configured
+// percentage of the class (StudentFeedbackBatch.studentCount), 40% for any
+// district the Super Admin hasn't configured — not the full class size.
+// `totalStudents` is kept alongside it, unreduced, for anywhere that needs
+// to show the real class size (e.g. "30 Total Students, 12 Required").
 export async function computeGradeFeedbackProgress(schoolId) {
-  const [batchRecords, feedbackDocs] = await Promise.all([
+  const [batchRecords, feedbackDocs, school] = await Promise.all([
     StudentFeedbackBatch.find({ school: schoolId }),
     StudentFeedback.find({ school: schoolId }).select('grade'),
+    School.findById(schoolId).select('district'),
   ])
+  const targetPercent = await getTargetPercentForDistrict(school?.district)
 
-  return computeGradeFeedbackProgressFromDocs(batchRecords, feedbackDocs)
+  return computeGradeFeedbackProgressFromDocs(batchRecords, feedbackDocs, targetPercent)
 }
 
 // Pure version of getSchoolStatus() below — see computeGradeFeedbackProgressFromDocs
