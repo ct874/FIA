@@ -13,8 +13,14 @@ export const TEACHER_ROUTES = {
   STUDENT_FEEDBACK: '/teacher/student-feedback',
 }
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'https://fia-bnum.onrender.com/api'
+// Cloudflare Workers migration: the Worker now serves both the SPA and the
+// API from one same-origin deployment (see worker/src/index.ts), so the
+// production default is a relative path, not an absolute Render URL — a
+// missing env var must never silently point production at a dead backend.
+// Local dev overrides this via .env.local to point at `wrangler dev`
+// (see .env.local.example) or the old Express server during the
+// transition/rollback window.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized'
 export const TEACHER_AUTH_UNAUTHORIZED_EVENT = 'teacherAuth:unauthorized'

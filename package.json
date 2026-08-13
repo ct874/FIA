@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "worker:install": "npm install --prefix worker",
+    "worker:dev": "npm run --prefix worker dev",
+    "worker:typecheck": "npm run --prefix worker typecheck",
+    "worker:deploy:dry-run": "npm run --prefix worker deploy:dry-run",
+    "deploy": "vite build && npm run --prefix worker deploy"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
