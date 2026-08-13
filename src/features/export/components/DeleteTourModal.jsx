@@ -7,13 +7,6 @@ import { deleteTour } from '../../../services/toursData.service'
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { useLanguage } from '../../../hooks/useLanguage'
 
-const CANCEL_BUTTON =
-  'inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 ease-out hover:bg-slate-50'
-// Overrides for the `Button` component (which is dark/full-width by
-// default) — same override pattern DangerZoneCard.jsx uses for its own
-// destructive-action button.
-const DANGER_BUTTON_OVERRIDE = 'w-auto! bg-red-600 px-5 hover:bg-red-700 focus-visible:ring-red-600'
-
 // Delete Tour -> Select Tour -> Click Delete -> Password Confirmation ->
 // Enter Super Admin Password -> Validate -> Delete. Works the same for the
 // 3 existing tours and any Super-Admin-created one — this only removes the
@@ -101,10 +94,10 @@ export default function DeleteTourModal({ isOpen, onClose, tours, onDeleted }) {
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <button type="button" onClick={resetAndClose} className={CANCEL_BUTTON}>
+              <Button type="button" variant="secondary" onClick={resetAndClose} className="w-auto!">
                 {t('common.cancel')}
-              </button>
-              <Button type="submit" className={DANGER_BUTTON_OVERRIDE}>
+              </Button>
+              <Button type="submit" variant="danger" className="w-auto!">
                 {t('export.tourManagement.deleteForm.confirmButton')}
               </Button>
             </div>
@@ -136,19 +129,21 @@ export default function DeleteTourModal({ isOpen, onClose, tours, onDeleted }) {
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => setStep('select')}
                 disabled={isSubmitting}
-                className={CANCEL_BUTTON}
+                className="w-auto!"
               >
                 {t('common.cancel')}
-              </button>
+              </Button>
               <Button
                 type="submit"
+                variant="danger"
                 isLoading={isSubmitting}
                 disabled={isSubmitting || !password}
-                className={DANGER_BUTTON_OVERRIDE}
+                className="w-auto!"
               >
                 {t('export.tourManagement.deleteForm.confirmButton')}
               </Button>

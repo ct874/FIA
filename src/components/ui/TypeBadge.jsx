@@ -2,7 +2,7 @@ import { useLanguage } from '../../hooks/useLanguage'
 
 const STYLES = {
   Teacher: 'bg-purple-50 text-purple-700 border-purple-200',
-  Student: 'bg-blue-50 text-blue-700 border-blue-200',
+  Student: 'bg-brand-50 text-brand-700 border-brand-200',
 }
 
 const LABEL_KEYS = {

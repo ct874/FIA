@@ -11,8 +11,8 @@ import { useTargetProgress } from '../../../hooks/useTargetProgress'
 import { useLanguage } from '../../../hooks/useLanguage'
 
 const PRIMARY_BUTTON =
-  'inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-blue-700 hover:shadow-md hover:shadow-blue-600/30'
-const ACTIVE_SORT_BUTTON = 'rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white'
+  'inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-brand-700 hover:shadow-lg hover:shadow-brand-900/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2'
+const ACTIVE_SORT_BUTTON = 'rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white'
 const INACTIVE_SORT_BUTTON =
   'rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-500 transition-colors duration-150 hover:bg-slate-100'
 
@@ -31,7 +31,7 @@ function TabButton({ active, onClick, children }) {
       type="button"
       onClick={onClick}
       className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 ease-out ${
-        active ? 'bg-white text-slate-900 shadow-sm shadow-slate-900/10' : 'text-slate-500 hover:text-slate-700'
+        active ? 'bg-white text-brand-700 shadow-sm shadow-slate-900/10' : 'text-slate-500 hover:text-slate-700'
       }`}
     >
       {children}

@@ -12,11 +12,9 @@ import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { useLanguage } from '../../../hooks/useLanguage'
 
 const DANGER_BUTTON =
-  'inline-flex items-center justify-center rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition-all duration-200 ease-out hover:border-red-600 hover:bg-red-600 hover:text-white hover:shadow-md hover:shadow-red-600/20'
+  'inline-flex items-center justify-center rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition-all duration-200 ease-out hover:border-red-600 hover:bg-red-600 hover:text-white hover:shadow-md hover:shadow-red-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2'
 const DANGER_BUTTON_SOLID =
-  'inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-red-700 hover:shadow-md hover:shadow-red-600/30'
-const CANCEL_BUTTON =
-  'inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 ease-out hover:bg-slate-50'
+  'inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-red-700 hover:shadow-md hover:shadow-red-600/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2'
 
 // One consistent password-confirmation mechanism for every destructive
 // Super Admin action on this page — "Delete All Feedback Data" and "Delete
@@ -104,16 +102,18 @@ export default function DangerZoneCard({ onDataCleared }) {
   const activeAction = pendingAction ? DELETE_ACTIONS[pendingAction] : null
 
   return (
-    <section className="mt-8 rounded-3xl border border-red-200 bg-red-50/40 p-6 shadow-xl shadow-red-900/5 sm:p-8">
-      <p className="text-xs font-semibold tracking-wide text-red-600 uppercase">{t('export.dangerZone.title')}</p>
-      <p className="mt-1.5 max-w-2xl text-sm text-slate-600">{t('export.dangerZone.description')}</p>
+    <section className="rounded-3xl border border-red-200 bg-red-50/40 p-6 shadow-xl shadow-red-900/5 sm:p-8">
+      <div className="border-b border-red-200/70 pb-6">
+        <p className="text-xs font-semibold tracking-wide text-red-500 uppercase">{t('export.dangerZone.title')}</p>
+        <p className="mt-1.5 max-w-2xl text-sm text-slate-600">{t('export.dangerZone.description')}</p>
+      </div>
 
       {message && (
-        <p className="mt-3 animate-fade-in-up text-sm font-medium text-green-700">{message}</p>
+        <p className="mt-4 animate-fade-in-up text-sm font-medium text-green-700">{message}</p>
       )}
-      {error && <p className="mt-3 animate-fade-in-up text-sm font-medium text-red-600">{error}</p>}
+      {error && <p className="mt-4 animate-fade-in-up text-sm font-medium text-red-600">{error}</p>}
 
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="mt-5 flex flex-wrap gap-3">
         <button type="button" onClick={() => openModal('feedback')} className={DANGER_BUTTON}>
           {t('export.dangerZone.deleteFeedback')}
         </button>
@@ -161,14 +161,15 @@ export default function DangerZoneCard({ onDataCleared }) {
               </div>
 
               <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={closeModal} disabled={isSubmitting} className={CANCEL_BUTTON}>
+                <Button type="button" variant="secondary" onClick={closeModal} disabled={isSubmitting} className="w-auto!">
                   {t('common.cancel')}
-                </button>
+                </Button>
                 <Button
                   type="submit"
+                  variant="danger"
                   isLoading={isSubmitting}
                   disabled={isSubmitting || !password}
-                  className="w-auto! bg-red-600 px-5 hover:bg-red-700 focus-visible:ring-red-600"
+                  className="w-auto!"
                 >
                   {t(`export.dangerZone.${activeAction.labelKey}`)}
                 </Button>

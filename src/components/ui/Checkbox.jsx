@@ -6,7 +6,7 @@ export default function Checkbox({ id, label, checked, onChange, ...rest }) {
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="h-4 w-4 cursor-pointer rounded border-slate-300 text-slate-900 accent-slate-900 focus:ring-2 focus:ring-slate-300"
+        className="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 accent-brand-600 focus:ring-2 focus:ring-brand-300"
         {...rest}
       />
       <span className="text-sm text-slate-600">{label}</span>

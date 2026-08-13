@@ -90,7 +90,7 @@ export default function LoginForm() {
         />
         <button
           type="button"
-          className="text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
+          className="text-sm font-medium text-slate-500 transition-colors hover:text-brand-700"
         >
           {t('auth.forgotPassword')}
         </button>

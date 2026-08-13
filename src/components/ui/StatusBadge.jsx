@@ -2,9 +2,9 @@ import { useLanguage } from '../../hooks/useLanguage'
 
 const STATUS_STYLES = {
   Completed: 'bg-green-50 text-green-700 border-green-200',
-  Pending: 'bg-orange-50 text-orange-700 border-orange-200',
+  Pending: 'bg-accent-50 text-accent-800 border-accent-200',
   'Not Started': 'bg-slate-100 text-slate-500 border-slate-200',
-  'In Progress': 'bg-blue-50 text-blue-700 border-blue-200',
+  'In Progress': 'bg-brand-50 text-brand-700 border-brand-200',
 }
 
 // Data-layer status values stay canonical English strings (used as style

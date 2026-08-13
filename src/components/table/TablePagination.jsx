@@ -20,8 +20,8 @@ export default function TablePagination({ page, totalPages, totalItems, pageSize
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
           className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600
-            transition-all duration-150 ease-out hover:bg-slate-100
-            disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+            transition-all duration-150 ease-out hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700
+            disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:bg-transparent disabled:hover:text-slate-600"
         >
           {t('common.previous')}
         </button>
@@ -33,8 +33,8 @@ export default function TablePagination({ page, totalPages, totalItems, pageSize
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
           className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600
-            transition-all duration-150 ease-out hover:bg-slate-100
-            disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+            transition-all duration-150 ease-out hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700
+            disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:bg-transparent disabled:hover:text-slate-600"
         >
           {t('common.next')}
         </button>

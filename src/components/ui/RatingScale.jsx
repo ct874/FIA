@@ -18,8 +18,8 @@ export default function RatingScale({ label, value, onChange, min = 1, max = 5, 
               transition-all duration-150 ease-out
               ${
                 value === option
-                  ? 'border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-600/25'
-                  : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-100'
+                  ? 'border-brand-600 bg-brand-600 text-white shadow-md shadow-brand-600/25'
+                  : 'border-slate-200 text-slate-600 hover:border-brand-300 hover:bg-brand-50'
               }`}
           >
             {option}

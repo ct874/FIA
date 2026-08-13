@@ -29,7 +29,7 @@ export default function GradeFeedbackCard({ grade, onStart }) {
         grade.targetMet ? 'border-green-200' : 'border-slate-200/80'
       }`}
     >
-      <div className={`px-5 py-4 text-white ${grade.targetMet ? 'bg-green-600' : 'bg-slate-900'}`}>
+      <div className={`px-5 py-4 text-white ${grade.targetMet ? 'bg-green-600' : 'bg-brand-600'}`}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">
             {t('feedbackBatch.gradeLabel')} {grade.grade}
@@ -59,7 +59,7 @@ export default function GradeFeedbackCard({ grade, onStart }) {
         <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div
             className={`h-full rounded-full transition-all duration-500 ease-out ${
-              grade.targetMet ? 'bg-green-500' : 'bg-amber-500'
+              grade.targetMet ? 'bg-green-500' : 'bg-brand-600'
             }`}
             style={{ width: `${progressPercent}%` }}
           />
@@ -71,7 +71,7 @@ export default function GradeFeedbackCard({ grade, onStart }) {
           <button
             type="button"
             onClick={() => onStart(grade)}
-            className="mt-4 w-full rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-amber-600 hover:shadow-md hover:shadow-amber-500/25"
+            className="mt-4 w-full rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-brand-700 hover:shadow-md hover:shadow-brand-600/25"
           >
             {grade.submittedCount > 0
               ? t('gradeFeedbackCard.continueFeedback', { count: remaining })

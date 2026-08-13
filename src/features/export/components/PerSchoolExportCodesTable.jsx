@@ -11,11 +11,9 @@ import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { useLanguage } from '../../../hooks/useLanguage'
 
 const CODE_INPUT_CLASSES =
-  'w-32 rounded-lg border border-slate-200 px-2 py-1.5 text-sm text-slate-900 transition-all duration-150 ease-out focus:border-slate-400 focus:ring-2 focus:ring-slate-100 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80'
+  'w-32 rounded-lg border border-slate-200 px-2 py-1.5 text-sm text-slate-900 transition-all duration-150 ease-out focus:border-brand-400 focus:ring-2 focus:ring-brand-100 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80'
 const SAVE_BUTTON =
-  'inline-flex shrink-0 items-center justify-center rounded-xl bg-amber-500 px-5 py-2 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-amber-600 hover:shadow-md hover:shadow-amber-500/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:bg-amber-500'
-const CANCEL_BUTTON =
-  'inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 ease-out hover:bg-slate-50'
+  'inline-flex shrink-0 items-center justify-center rounded-xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-brand-700 hover:shadow-md hover:shadow-brand-900/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:bg-brand-600'
 
 // District Code / Postal Code are backend-persisted, password-confirmed,
 // and permanently locked once saved (see school.controller.js's
@@ -184,7 +182,7 @@ export default function PerSchoolExportCodesTable({ directoryVersion }) {
   )
 
   return (
-    <div className="mt-6">
+    <div className="mt-6 border-t border-slate-100 pt-6">
       <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">
@@ -254,9 +252,15 @@ export default function PerSchoolExportCodesTable({ directoryVersion }) {
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <button type="button" onClick={closeSaveModal} disabled={isSaving} className={CANCEL_BUTTON}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={closeSaveModal}
+                disabled={isSaving}
+                className="w-auto!"
+              >
                 {t('common.cancel')}
-              </button>
+              </Button>
               <Button type="submit" isLoading={isSaving} disabled={isSaving || !password} className="w-auto! px-5">
                 {t('export.perSchoolCodes.saveChanges')}
               </Button>

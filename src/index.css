@@ -2,6 +2,35 @@
 
 @theme {
   --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  /* Primary brand accent — deep teal (#177285). Communicates trust,
+     technology, education. Used for primary actions, active states,
+     focus rings, and key data. */
+  --color-brand-50: #f3f8f9;
+  --color-brand-100: #e3eef0;
+  --color-brand-200: #c3dadf;
+  --color-brand-300: #99c1c9;
+  --color-brand-400: #619fac;
+  --color-brand-500: #378696;
+  --color-brand-600: #177285;
+  --color-brand-700: #135d6d;
+  --color-brand-800: #104e5a;
+  --color-brand-900: #0c3e48;
+  --color-brand-950: #092b33;
+
+  /* Secondary accent — energetic yellow (#FDB61C). Reserved for CTAs,
+     highlights, active indicators and important stats. Used sparingly. */
+  --color-accent-50: #fff8e8;
+  --color-accent-100: #fff0d2;
+  --color-accent-200: #fee2a4;
+  --color-accent-300: #fecf69;
+  --color-accent-400: #fdb61c;
+  --color-accent-500: #e9a71a;
+  --color-accent-600: #ca9216;
+  --color-accent-700: #a77812;
+  --color-accent-800: #89620f;
+  --color-accent-900: #6a4c0c;
+  --color-accent-950: #513a09;
 }
 
 html,
@@ -13,6 +42,7 @@ body,
 body {
   margin: 0;
   font-family: var(--font-sans);
+  color: var(--color-slate-800);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -30,4 +60,19 @@ body {
 
 .animate-fade-in-up {
   animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

@@ -80,7 +80,7 @@ export default function DashboardTable({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-200">
+      <div className="overflow-x-auto rounded-2xl border border-brand-100">
         <table
           className={`w-full border-collapse text-left text-sm ${fluid ? '' : 'min-w-225'}`}
         >
@@ -94,7 +94,7 @@ export default function DashboardTable({
             {paginatedData.map((row, index) => (
               <tr
                 key={row.id ?? index}
-                className="border-b border-slate-100 odd:bg-white even:bg-slate-50/60 transition-colors duration-150 last:border-b-0 hover:bg-blue-50/50"
+                className="border-b border-slate-100 odd:bg-white even:bg-slate-50/60 transition-colors duration-150 last:border-b-0 hover:bg-brand-50/50"
               >
                 {columns.map((column) => (
                   <td

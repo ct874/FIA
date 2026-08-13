@@ -80,12 +80,11 @@ export default function DashboardOverview() {
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <SummaryCard accent label={t('home.summary.schools')} value={summary.schoolsCount} />
             <SummaryCard
-              accent
               label={t('home.summary.teacherResponses')}
               value={summary.teacherResponses.toLocaleString()}
             />
-            <SummaryCard accent label={t('home.summary.overallCsat')} value={summary.overallCsat.toFixed(2)} />
-            <SummaryCard accent label={t('home.summary.overallItp')} value={summary.overallItp.toFixed(2)} />
+            <SummaryCard label={t('home.summary.overallCsat')} value={summary.overallCsat.toFixed(2)} />
+            <SummaryCard label={t('home.summary.overallItp')} value={summary.overallItp.toFixed(2)} />
           </div>
 
           <TourMetricsSection title={t('home.csatItpByTour')}>

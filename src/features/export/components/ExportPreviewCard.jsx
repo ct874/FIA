@@ -30,23 +30,37 @@ import { getMonthlyCyclePresets, formatDateForInput, parseDateFromInput } from '
 const PREVIEW_PAGE_SIZE = 20
 
 const SECONDARY_BUTTON =
-  'inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-all duration-200 ease-out hover:bg-slate-100'
+  'inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-all duration-200 ease-out hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700'
 const TEAL_BUTTON =
-  'inline-flex items-center gap-1.5 rounded-xl bg-teal-700 px-3.5 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-teal-800 hover:shadow-md hover:shadow-teal-700/20'
-const NAVY_BUTTON =
-  'inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-md hover:shadow-slate-900/20 disabled:cursor-not-allowed disabled:opacity-60'
-const AMBER_BUTTON =
-  'inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-amber-600 hover:shadow-md hover:shadow-amber-500/30 disabled:cursor-not-allowed disabled:opacity-60'
+  'inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-3.5 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-brand-700 hover:shadow-md hover:shadow-brand-900/20'
+const OUTLINE_BUTTON =
+  'inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition-all duration-200 ease-out hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60'
+const PRIMARY_CTA_BUTTON =
+  'inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-brand-700 hover:shadow-lg hover:shadow-brand-900/25 disabled:cursor-not-allowed disabled:opacity-60'
 const PRESET_BUTTON =
-  'rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-all duration-150 ease-out hover:bg-slate-100'
+  'rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-all duration-150 ease-out hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700'
 const DATE_INPUT =
-  'rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition-all duration-150 ease-out focus:border-slate-400 focus:ring-4 focus:ring-slate-100 focus:outline-none'
+  'rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition-all duration-150 ease-out focus:border-brand-400 focus:ring-4 focus:ring-brand-100 focus:outline-none'
 
 function RefreshIcon({ className = 'h-3.5 w-3.5' }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path
         d="M4 12a8 8 0 0114-5.2M20 12a8 8 0 01-14 5.2M4 4v5h5M20 20v-5h-5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function DownloadIcon({ className = 'h-3.5 w-3.5' }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"
         stroke="currentColor"
         strokeWidth="1.8"
         strokeLinecap="round"
@@ -220,16 +234,16 @@ export default function ExportPreviewCard({ directoryVersion }) {
     activeTab === 'afe' ? !isAfeLoading && !afeError : !isLoading && !error
 
   return (
-    <section className="mt-8 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
-      <div>
+    <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
+      <div className="border-b border-slate-100 pb-6">
         <h2 className="text-xl font-semibold tracking-tight text-slate-900">{t('export.exportPreview.title')}</h2>
         <p className="mt-1.5 max-w-2xl text-sm text-slate-500">
           {t('export.exportPreview.description')}{' '}
-          <span className="font-medium text-amber-600">{t('export.exportPreview.missingFieldNote')}</span>
+          <span className="font-medium text-accent-700">{t('export.exportPreview.missingFieldNote')}</span>
         </p>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center gap-2">
         <button type="button" onClick={handleRefresh} className={SECONDARY_BUTTON}>
           <RefreshIcon /> {t('export.exportPreview.refresh')}
         </button>
@@ -238,37 +252,40 @@ export default function ExportPreviewCard({ directoryVersion }) {
           onClick={() => handleDownload('studentFeedback', STUDENT_FEEDBACK_COLUMNS, 'fia-student-feedback')}
           className={TEAL_BUTTON}
         >
-          {t('export.exportPreview.studentFeedbackCsv')}
+          <DownloadIcon /> {t('export.exportPreview.studentFeedbackCsv')}
         </button>
         <button
           type="button"
           onClick={() => handleDownload('teacherFeedback', TEACHER_FEEDBACK_COLUMNS, 'fia-teacher-feedback')}
           className={TEAL_BUTTON}
         >
-          {t('export.exportPreview.teacherFeedbackCsv')}
+          <DownloadIcon /> {t('export.exportPreview.teacherFeedbackCsv')}
         </button>
         <button
           type="button"
           onClick={handleDownloadAfeOfficial}
           disabled={afeDownloadStatus === 'preparing'}
-          className={NAVY_BUTTON}
+          className={OUTLINE_BUTTON}
         >
-          {t('export.exportPreview.afeCsv')}
+          <DownloadIcon /> {t('export.exportPreview.afeCsv')}
         </button>
         <button
           type="button"
           onClick={handleDownloadWorkbook}
           disabled={afeDownloadStatus === 'preparing'}
-          className={AMBER_BUTTON}
+          className={PRIMARY_CTA_BUTTON}
         >
-          {t('export.exportPreview.downloadAll')}
+          <DownloadIcon className="h-4 w-4" /> {t('export.exportPreview.downloadAll')}
         </button>
 
         {afeDownloadStatus === 'preparing' && (
           <span className="text-xs font-medium text-slate-500">{t('export.exportPreview.afePreparing')}</span>
         )}
         {afeDownloadStatus === 'ready' && (
-          <span className="text-xs font-medium text-green-600">{t('export.exportPreview.afeReady')}</span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-600">
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent-400" />
+            {t('export.exportPreview.afeReady')}
+          </span>
         )}
         {afeDownloadStatus === 'error' && (
           <span className="text-xs font-medium text-red-600">{afeDownloadError}</span>
@@ -347,7 +364,7 @@ export default function ExportPreviewCard({ directoryVersion }) {
             onClick={() => handleTabChange(tab.key)}
             className={`-mb-px rounded-t-xl border-b-2 px-4 py-2 text-sm font-medium transition-all duration-150 ease-out ${
               activeTab === tab.key
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-brand-600 text-brand-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -391,7 +408,10 @@ export default function ExportPreviewCard({ directoryVersion }) {
             </thead>
             <tbody>
               {previewRows.map((row, index) => (
-                <tr key={index} className="border-b border-slate-100 odd:bg-white even:bg-slate-50/60">
+                <tr
+                  key={index}
+                  className="border-b border-slate-100 odd:bg-white even:bg-slate-50/60 transition-colors duration-150 hover:bg-brand-50/50"
+                >
                   {activeColumns.map((column) => {
                     // The AFE (Official) format intentionally leaves many
                     // cells blank (see server/src/constants/afeOfficialColumns.js)

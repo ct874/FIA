@@ -8,8 +8,8 @@ export default function ProtectedRoute() {
 
   if (isCheckingSession) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <Spinner className="h-8 w-8 text-slate-400" />
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-brand-50/70 via-white to-white">
+        <Spinner className="h-8 w-8 text-brand-500" />
       </div>
     )
   }

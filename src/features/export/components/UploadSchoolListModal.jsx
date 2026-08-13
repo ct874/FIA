@@ -117,22 +117,22 @@ export default function UploadSchoolListModal({
           onDrop={handleDrop}
           onClick={() => !selectedFile && fileInputRef.current?.click()}
           className={`mt-6 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-all duration-200 ease-out
-            ${selectedFile ? 'cursor-default border-slate-200 bg-slate-50/60' : 'cursor-pointer border-slate-300 hover:border-blue-400 hover:bg-blue-50/40'}
-            ${isDragActive ? 'border-blue-500 bg-blue-50/60' : ''}`}
+            ${selectedFile ? 'cursor-default border-slate-200 bg-slate-50/60' : 'cursor-pointer border-slate-300 hover:border-brand-400 hover:bg-brand-50/40'}
+            ${isDragActive ? 'border-brand-500 bg-brand-50/60' : ''}`}
         >
           {!selectedFile ? (
             <>
               <UploadCloudIcon className="h-10 w-10 text-slate-400" />
               <p className="text-sm font-medium text-slate-700">
                 {t('export.uploadModal.dropzoneHintPrefix')}{' '}
-                <span className="text-blue-600 underline">{t('export.uploadModal.browse')}</span>
+                <span className="text-brand-600 underline">{t('export.uploadModal.browse')}</span>
               </p>
               <p className="text-xs text-slate-400">{t('export.uploadModal.onlyXlsx')}</p>
             </>
           ) : (
             <div className="flex w-full items-center justify-between gap-3 rounded-xl bg-white p-4 shadow-sm shadow-slate-900/5">
               <div className="flex items-center gap-3 text-left">
-                <FileIcon className="h-8 w-8 shrink-0 text-blue-600" />
+                <FileIcon className="h-8 w-8 shrink-0 text-brand-600" />
                 <div>
                   <p className="text-sm font-medium text-slate-900">{selectedFile.name}</p>
                   <p className="text-xs text-slate-400">{formatFileSize(selectedFile.size)}</p>
@@ -161,14 +161,14 @@ export default function UploadSchoolListModal({
         />
 
         {isRepeatFile && (
-          <p className="mt-3 text-xs font-medium text-amber-600">{t('export.uploadModal.repeatFileWarning')}</p>
+          <p className="mt-3 text-xs font-medium text-accent-700">{t('export.uploadModal.repeatFileWarning')}</p>
         )}
 
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors duration-150 hover:bg-slate-100"
+            className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors duration-150 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
           >
             {t('export.uploadModal.cancel')}
           </button>
@@ -176,8 +176,8 @@ export default function UploadSchoolListModal({
             type="button"
             onClick={handleUploadClick}
             disabled={!selectedFile}
-            className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white
-              transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-md hover:shadow-slate-900/20
+            className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white
+              transition-all duration-200 ease-out hover:bg-brand-700 hover:shadow-md hover:shadow-brand-900/20
               disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t('export.uploadModal.upload')}

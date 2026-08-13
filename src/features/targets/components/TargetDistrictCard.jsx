@@ -22,34 +22,34 @@ export default function TargetDistrictCard({ district, percent, target, achieved
       onClick={onClick}
       className="w-full rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-sm shadow-slate-900/5
         transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-900/10
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
     >
       <div className="flex items-center justify-between gap-3">
         <p className="truncate text-base font-semibold text-slate-900">{district}</p>
-        <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600">
+        <span className="shrink-0 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-600">
           {percent}%
         </span>
       </div>
 
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-full rounded-full bg-blue-600 transition-all duration-300 ease-out"
+          className="h-full rounded-full bg-brand-600 transition-all duration-300 ease-out"
           style={{ width: `${clampedPercent}%` }}
         />
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
         <MiniStat label={t('targets.summary.target')} value={target.toLocaleString()} />
-        <MiniStat label={t('targets.summary.achieved')} value={achieved.toLocaleString()} accentClass="text-blue-600" />
+        <MiniStat label={t('targets.summary.achieved')} value={achieved.toLocaleString()} accentClass="text-brand-600" />
         <MiniStat
           label={t('targets.summary.remaining')}
           value={remaining.toLocaleString()}
-          accentClass="text-amber-600"
+          accentClass="text-slate-600"
         />
       </div>
 
       {target === 0 && (
-        <p className="mt-3 text-xs font-medium text-amber-600">{t('targets.district.noTargetConfigured')}</p>
+        <p className="mt-3 text-xs font-medium text-accent-600">{t('targets.district.noTargetConfigured')}</p>
       )}
     </button>
   )

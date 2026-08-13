@@ -10,7 +10,7 @@ export default function TeacherLayout() {
 
   return (
     <TeacherStatusProvider>
-      <div className="flex min-h-screen flex-col bg-slate-50">
+      <div className="flex min-h-screen flex-col bg-gradient-to-b from-brand-50/70 via-white to-white">
         <TeacherNavbar />
 
         <main className="flex-1">

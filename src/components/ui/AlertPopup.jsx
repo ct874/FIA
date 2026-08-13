@@ -34,7 +34,7 @@ function WarningIcon({ className }) {
 const VARIANTS = {
   success: { headerBg: 'bg-green-50', iconBg: 'bg-green-100', iconColor: 'text-green-600', Icon: CheckIcon },
   error: { headerBg: 'bg-red-50', iconBg: 'bg-red-100', iconColor: 'text-red-600', Icon: ErrorIcon },
-  warning: { headerBg: 'bg-amber-50', iconBg: 'bg-amber-100', iconColor: 'text-amber-600', Icon: WarningIcon },
+  warning: { headerBg: 'bg-accent-50', iconBg: 'bg-accent-100', iconColor: 'text-accent-700', Icon: WarningIcon },
 }
 
 export default function AlertPopup({
@@ -63,7 +63,7 @@ export default function AlertPopup({
         <button
           type="button"
           onClick={onClose}
-          className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-md hover:shadow-slate-900/20"
+          className="w-full rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-brand-700 hover:shadow-md hover:shadow-brand-900/20"
         >
           {primaryLabel || t('common.close')}
         </button>

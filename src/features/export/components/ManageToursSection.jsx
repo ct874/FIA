@@ -4,8 +4,8 @@ import DeleteTourModal from './DeleteTourModal'
 import { useTourCatalog } from '../../../hooks/useTourCatalog'
 import { useLanguage } from '../../../hooks/useLanguage'
 
-const AMBER_BUTTON =
-  'inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-amber-600 hover:shadow-md hover:shadow-amber-500/25'
+const PRIMARY_BUTTON =
+  'inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-brand-700 hover:shadow-md hover:shadow-brand-900/20'
 const OUTLINE_BUTTON =
   'inline-flex items-center justify-center rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition-all duration-200 ease-out hover:border-red-600 hover:bg-red-600 hover:text-white hover:shadow-md hover:shadow-red-600/20'
 
@@ -41,7 +41,7 @@ export default function ManageToursSection() {
           <p className="mt-1 max-w-2xl text-sm text-slate-500">{t('export.tourManagement.description')}</p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <button type="button" onClick={() => setIsAddOpen(true)} className={AMBER_BUTTON}>
+          <button type="button" onClick={() => setIsAddOpen(true)} className={PRIMARY_BUTTON}>
             {t('export.tourManagement.addTour')}
           </button>
           <button type="button" onClick={() => setIsDeleteOpen(true)} className={OUTLINE_BUTTON}>
@@ -88,7 +88,10 @@ export default function ManageToursSection() {
               </tr>
             ) : (
               tours.map((tour) => (
-                <tr key={tour.tourId} className="odd:bg-white even:bg-slate-50/60">
+                <tr
+                  key={tour.tourId}
+                  className="odd:bg-white even:bg-slate-50/60 transition-colors duration-150 hover:bg-brand-50/50"
+                >
                   <td className="border-b border-slate-100 px-4 py-2 text-slate-700">{tour.code}</td>
                   <td className="border-b border-slate-100 px-4 py-2 text-slate-700">{tour.tourName}</td>
                   <td className="border-b border-slate-100 px-4 py-2 text-slate-700">

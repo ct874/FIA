@@ -90,7 +90,7 @@ export default function TeacherDashboardPage() {
 
         {teacher && (
           <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
-            <p className="text-[10px] font-semibold tracking-wide text-amber-300 uppercase">
+            <p className="text-[10px] font-semibold tracking-wide text-accent-300 uppercase">
               {t('teacherDashboard.schoolLabel')}
             </p>
             <p className="mt-1 text-sm font-semibold text-white">{teacher.schoolName}</p>

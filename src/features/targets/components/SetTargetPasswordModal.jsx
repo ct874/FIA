@@ -6,9 +6,6 @@ import { verifySetTargetAccess } from '../../../services/targetData.service'
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { useLanguage } from '../../../hooks/useLanguage'
 
-const CANCEL_BUTTON =
-  'inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 ease-out hover:bg-slate-50'
-
 // Directly modeled on DangerZoneCard's "re-enter password" modal — same
 // button styles, same 403-vs-other-status error handling — for the "Set
 // Target" access gate. This is a lightweight UI confirmation step; the real
@@ -78,9 +75,9 @@ export default function SetTargetPasswordModal({ isOpen, onClose, onVerified }) 
           </div>
 
           <div className="mt-6 flex justify-end gap-3">
-            <button type="button" onClick={handleClose} disabled={isVerifying} className={CANCEL_BUTTON}>
+            <Button type="button" variant="secondary" onClick={handleClose} disabled={isVerifying} className="w-auto!">
               {t('common.cancel')}
-            </button>
+            </Button>
             <Button type="submit" isLoading={isVerifying} disabled={isVerifying || !password} className="w-auto!">
               {t('targets.password.continueLabel')}
             </Button>

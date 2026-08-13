@@ -35,7 +35,7 @@ export default function LanguageSwitcher({ className = '' }) {
             aria-checked={isActive}
             onClick={() => setLanguage(option.code)}
             className={`rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-all duration-200 ease-out ${
-              isActive ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+              isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-500 hover:bg-brand-50 hover:text-brand-700'
             }`}
           >
             {t(option.labelKey)}

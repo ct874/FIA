@@ -64,7 +64,7 @@ export default function Modal({
       <div
         role="dialog"
         aria-modal="true"
-        className={`animate-fade-in-up relative z-10 max-h-[90vh] w-full ${SIZE_CLASSES[size]} overflow-y-auto rounded-3xl bg-white shadow-2xl shadow-slate-900/20`}
+        className={`animate-fade-in-up relative z-10 max-h-[90vh] w-full ${SIZE_CLASSES[size]} overflow-y-auto rounded-3xl border-t-4 border-t-brand-500 bg-white shadow-2xl shadow-slate-900/20`}
       >
         {showCloseButton && (
           <button

@@ -32,10 +32,10 @@ function RatingRow({ label, value, onChange }) {
             key={option}
             type="button"
             onClick={() => onChange(option)}
-            className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold transition-all duration-150 ease-out ${
+            className={`flex h-9 w-9 items-center justify-center rounded-lg border text-xs font-semibold transition-all duration-150 ease-out ${
               value === option
-                ? 'border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/30'
-                : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
+                ? 'border-brand-600 bg-brand-600 text-white shadow-sm shadow-brand-600/30'
+                : 'border-slate-200 text-slate-500 hover:border-brand-300 hover:bg-brand-50'
             }`}
           >
             {option}
@@ -61,7 +61,7 @@ function YesNoRow({ label, value, onChange, yesLabel, noLabel, maybeLabel }) {
             type="button"
             onClick={() => onChange(option.val)}
             className={`px-4 py-1.5 text-xs font-semibold transition-colors duration-150 ${
-              value === option.val ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+              value === option.val ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 hover:bg-brand-50 hover:text-brand-700'
             }`}
           >
             {option.label}
@@ -123,7 +123,7 @@ export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSu
       <button
         type="button"
         onClick={onCancel}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors duration-150 hover:text-slate-900"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors duration-150 hover:text-brand-700"
       >
         <BackIcon />
         {t('studentFeedback.backToGrades')}
@@ -136,7 +136,7 @@ export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSu
             {t('studentFeedback.gradeHeading', { grade: grade.grade })}
           </h2>
         </div>
-        <span className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+        <span className="rounded-full border border-accent-200 bg-accent-50 px-3 py-1.5 text-xs font-semibold text-accent-800">
           {remaining === 1
             ? t('studentFeedback.studentsRemaining', { count: remaining })
             : t('studentFeedback.studentsRemainingPlural', { count: remaining })}
@@ -191,7 +191,7 @@ export default function BatchFeedbackWorkspace({ grade, onSubmit, onCancel, isSu
               <button
                 type="button"
                 onClick={onCancel}
-                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition-colors duration-150 hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors duration-150 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
               >
                 {t('studentFeedback.cancel')}
               </button>

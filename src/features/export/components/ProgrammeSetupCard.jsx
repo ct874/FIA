@@ -41,8 +41,8 @@ export default function ProgrammeSetupCard({ onSaved, directoryVersion }) {
   }
 
   return (
-    <section className="mt-8 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
+      <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-slate-900">
             {t('export.programmeSetup.title')}
@@ -52,8 +52,8 @@ export default function ProgrammeSetupCard({ onSaved, directoryVersion }) {
         <button
           type="button"
           onClick={handleSave}
-          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-amber-500 px-5 py-2 text-sm font-semibold text-white
-            transition-all duration-200 ease-out hover:bg-amber-600 hover:shadow-md hover:shadow-amber-500/30"
+          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white
+            transition-all duration-200 ease-out hover:bg-brand-700 hover:shadow-md hover:shadow-brand-900/20"
         >
           {t('export.programmeSetup.save')}
         </button>

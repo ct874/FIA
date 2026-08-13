@@ -52,8 +52,8 @@ function CloseIcon({ className = 'h-6 w-6' }) {
 function navLinkClassName({ isActive }) {
   return `rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-all duration-200 ease-out lg:px-4 ${
     isActive
-      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
-      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+      ? 'bg-brand-600 text-white shadow-md shadow-brand-600/25'
+      : 'text-slate-500 hover:bg-brand-50 hover:text-brand-700'
   }`
 }
 
@@ -78,7 +78,7 @@ function WorkflowTab({ step, status, onClick, completePreviousStepLabel }) {
         title={completePreviousStepLabel}
         className="group relative inline-flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium whitespace-nowrap text-slate-400 opacity-60 lg:px-4"
       >
-        <LockIcon className="h-3.5 w-3.5 text-amber-500" />
+        <LockIcon className="h-3.5 w-3.5 text-accent-600" />
         {step.label}
         <span className="pointer-events-none absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
           {completePreviousStepLabel}
@@ -159,7 +159,7 @@ export default function TeacherNavbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 border-b border-brand-100 bg-brand-50/70 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to={TEACHER_ROUTES.DASHBOARD} className="flex items-center gap-3">
             <FiaLogo className="h-9 w-9" />

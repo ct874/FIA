@@ -15,7 +15,7 @@ function FilterIcon({ className = 'h-4 w-4' }) {
 }
 
 const SELECT_CLASSES =
-  'rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition-all duration-150 ease-out focus:border-slate-400 focus:ring-4 focus:ring-slate-100 focus:outline-none'
+  'rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition-all duration-150 ease-out focus:border-brand-400 focus:ring-4 focus:ring-brand-100 focus:outline-none'
 
 export default function DashboardFilterBar({ options, filters, onFilterChange, onClear, resultLabel }) {
   const { t } = useLanguage()
@@ -79,7 +79,7 @@ export default function DashboardFilterBar({ options, filters, onFilterChange, o
         )}
       </div>
 
-      <p className="text-sm font-medium text-blue-600">{resultLabel}</p>
+      <p className="text-sm font-medium text-brand-600">{resultLabel}</p>
     </div>
   )
 }

@@ -27,7 +27,7 @@ export default function SearchInput({
         placeholder={placeholder || t('table.searchPlaceholder')}
         className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-4 pl-10 text-sm text-slate-900
           transition-all duration-150 ease-out placeholder:text-slate-400
-          focus:border-slate-400 focus:ring-4 focus:ring-slate-100 focus:outline-none"
+          focus:border-brand-400 focus:ring-4 focus:ring-brand-100 focus:outline-none"
       />
     </div>
   )

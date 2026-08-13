@@ -9,14 +9,12 @@ import {
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { useLanguage } from '../../../hooks/useLanguage'
 
-const CANCEL_BUTTON =
-  'inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 ease-out hover:bg-slate-50'
 const SMALL_BUTTON =
-  'inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition-all duration-150 ease-out hover:bg-slate-700'
+  'inline-flex items-center justify-center rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition-all duration-150 ease-out hover:bg-brand-700'
 const SMALL_OUTLINE_BUTTON =
-  'inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-150 ease-out hover:bg-slate-50'
+  'inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-150 ease-out hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700'
 const NUMBER_INPUT =
-  'w-24 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 focus:border-slate-400 focus:ring-4 focus:ring-slate-100 focus:outline-none'
+  'w-24 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 focus:border-brand-400 focus:ring-4 focus:ring-brand-100 focus:outline-none'
 
 function validatePercent(value, t) {
   if (String(value).trim() === '') return t('export.districtFeedbackTargets.errors.required')
@@ -169,7 +167,10 @@ export default function DistrictFeedbackTargetSection() {
               targets.map((target) => {
                 const isEditing = editingDistrict === target.district
                 return (
-                  <tr key={target.district} className="odd:bg-white even:bg-slate-50/60">
+                  <tr
+                    key={target.district}
+                    className="odd:bg-white even:bg-slate-50/60 transition-colors duration-150 hover:bg-brand-50/50"
+                  >
                     <td className="border-b border-slate-100 px-4 py-2 text-slate-700">{target.district}</td>
                     <td className="border-b border-slate-100 px-4 py-2 text-slate-700">
                       {isEditing ? (
@@ -253,9 +254,15 @@ export default function DistrictFeedbackTargetSection() {
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <button type="button" onClick={closePasswordModal} disabled={isSubmitting} className={CANCEL_BUTTON}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={closePasswordModal}
+                disabled={isSubmitting}
+                className="w-auto!"
+              >
                 {t('common.cancel')}
-              </button>
+              </Button>
               <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting || !password} className="w-auto!">
                 {t('export.districtFeedbackTargets.password.continueLabel')}
               </Button>

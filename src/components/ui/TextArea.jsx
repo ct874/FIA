@@ -13,7 +13,7 @@ export default function TextArea({ id, label, error, className = '', rows = 3, .
           ${
             error
               ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-              : 'border-slate-200 focus:border-slate-400 focus:ring-slate-100'
+              : 'border-slate-200 focus:border-brand-400 focus:ring-brand-100'
           }
           ${className}`}
         aria-invalid={Boolean(error)}

@@ -46,7 +46,7 @@ export default function UploadProgressModal({ isOpen, isComplete }) {
             <CheckIcon />
           </div>
         ) : (
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-slate-100 border-t-blue-600" />
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-slate-100 border-t-brand-600" />
         )}
 
         <h3 className="mt-4 text-lg font-semibold text-slate-900">{t('export.progressModal.title')}</h3>
@@ -54,7 +54,7 @@ export default function UploadProgressModal({ isOpen, isComplete }) {
         <div className="mt-6 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div
             className={`h-full rounded-full transition-all duration-500 ease-out ${
-              isComplete ? 'bg-green-500' : 'bg-blue-600'
+              isComplete ? 'bg-green-500' : 'bg-brand-600'
             }`}
             style={{ width: `${progressPercent}%` }}
           />

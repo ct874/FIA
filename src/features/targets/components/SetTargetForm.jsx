@@ -8,9 +8,6 @@ import { fetchTargetDistrictOptions, saveTarget } from '../../../services/target
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { useLanguage } from '../../../hooks/useLanguage'
 
-const CANCEL_BUTTON =
-  'inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 ease-out hover:bg-slate-50'
-
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -226,9 +223,9 @@ export default function SetTargetForm({ onClose, onSaved }) {
             {saveError && <p className="mt-5 text-sm font-medium text-red-600">{saveError}</p>}
 
             <div className="mt-8 flex justify-end gap-3 border-t border-slate-200 pt-6">
-              <button type="button" onClick={handleClose} disabled={isSaving} className={CANCEL_BUTTON}>
+              <Button type="button" variant="secondary" onClick={handleClose} disabled={isSaving} className="w-auto!">
                 {t('common.cancel')}
-              </button>
+              </Button>
               <Button type="submit" isLoading={isSaving} disabled={isSaving} className="w-auto! px-6">
                 {t('common.save')}
               </Button>

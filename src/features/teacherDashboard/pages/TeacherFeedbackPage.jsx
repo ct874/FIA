@@ -50,20 +50,20 @@ function SubmittedSummary({ submissions, t }) {
         {first && (
           <div className="mt-6 rounded-2xl bg-white/5 p-5 text-left text-sm">
             <p>
-              <span className="font-semibold text-amber-300">{t('teacherFeedback.submittedBy')}</span> {first.submittedBy}
+              <span className="font-semibold text-accent-300">{t('teacherFeedback.submittedBy')}</span> {first.submittedBy}
             </p>
             {first.contactNumber && (
               <p className="mt-1">
-                <span className="font-semibold text-amber-300">{t('teacherFeedback.contact')}</span> {first.contactNumber}
+                <span className="font-semibold text-accent-300">{t('teacherFeedback.contact')}</span> {first.contactNumber}
               </p>
             )}
             {first.email && (
               <p className="mt-1">
-                <span className="font-semibold text-amber-300">{t('teacherFeedback.email')}</span> {first.email}
+                <span className="font-semibold text-accent-300">{t('teacherFeedback.email')}</span> {first.email}
               </p>
             )}
             <p className="mt-1">
-              <span className="font-semibold text-amber-300">{t('teacherFeedback.month')}</span> {first.month}
+              <span className="font-semibold text-accent-300">{t('teacherFeedback.month')}</span> {first.month}
             </p>
           </div>
         )}

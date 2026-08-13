@@ -29,7 +29,7 @@ export default function WorkflowStepper({ currentStep, completedSteps = [] }) {
                 isCompleted
                   ? 'bg-green-500 text-white'
                   : isCurrent
-                    ? 'bg-slate-900 text-white'
+                    ? 'bg-brand-600 text-white'
                     : 'bg-slate-100 text-slate-400'
               }`}
             >

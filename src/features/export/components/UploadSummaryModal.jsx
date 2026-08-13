@@ -91,7 +91,7 @@ export default function UploadSummaryModal({ isOpen, onClose, summary }) {
             icon="⚠"
             label={t('export.summaryModal.invalidUdiseRows')}
             value={summary.invalidUdise ?? 0}
-            accentClassName="border-t-4 border-t-amber-400 border-slate-200"
+            accentClassName="border-t-4 border-t-accent-400 border-slate-200"
           />
           <StatCard
             icon="⚠"
@@ -110,8 +110,8 @@ export default function UploadSummaryModal({ isOpen, onClose, summary }) {
                 onClick={() => setActiveFilter(filter.key)}
                 className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 ease-out ${
                   activeFilter === filter.key
-                    ? 'border-blue-600 bg-blue-600 text-white'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
+                    ? 'border-brand-600 bg-brand-600 text-white'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700'
                 }`}
               >
                 {filter.label}
@@ -123,7 +123,7 @@ export default function UploadSummaryModal({ isOpen, onClose, summary }) {
             type="button"
             onClick={() => downloadUploadReport(summary.results)}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700
-              transition-all duration-200 ease-out hover:bg-slate-100"
+              transition-all duration-200 ease-out hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
           >
             {t('export.summaryModal.downloadReport')}
           </button>
@@ -139,6 +139,23 @@ export default function UploadSummaryModal({ isOpen, onClose, summary }) {
             fluid
           />
         </div>
+      </div>
+
+      {/* Full-width action bar attached directly below the summary content —
+          visually part of the same card, not a separate popup. Wired to the
+          modal's existing onClose (no new/duplicate functionality invented). */}
+      <div className="border-t border-slate-100 px-6 py-4 sm:px-8">
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white
+            transition-all duration-200 ease-out
+            hover:bg-brand-700 hover:shadow-lg hover:shadow-brand-900/20 hover:-translate-y-0.5
+            active:translate-y-0 active:shadow-none
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+        >
+          {t('common.close')}
+        </button>
       </div>
     </Modal>
   )
