@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "fia-worker",
+  "name": "fia",
   "main": "src/index.ts",
   "compatibility_date": "2024-09-23",
   // Needed for bcryptjs's CSPRNG resolution and for SheetJS's bundler
