@@ -11,9 +11,11 @@
   // Bcrypt (cost 12) and the AFE CSV export are real CPU work — the free
   // plan's 10ms/request budget cannot run either. Workers Paid is required;
   // this raises the ceiling available to a request (see docs/MIGRATION.md).
-  "limits": {
-    "cpu_ms": 30000
-  },
+
+  // "limits": {
+  //   "cpu_ms": 30000
+  // },
+
 
   // Serves the Vite build (../dist) directly at the edge — requests that
   // match a real file are served before the Worker ever runs (no cost, no
