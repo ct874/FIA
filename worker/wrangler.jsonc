@@ -78,7 +78,7 @@
       "name": "fia-worker-staging",
       "vars": {
         "NODE_ENV": "staging",
-        "FIREBASE_PROJECT_ID": "REPLACE_WITH_STAGING_FIREBASE_PROJECT_ID",
+        "FIREBASE_PROJECT_ID": "fia-career-tours",
         "FIRESTORE_DATABASE_ID": "(default)",
         "SUPER_ADMIN_LOGIN_ID": "fia@admin.com",
         "JWT_EXPIRES_IN": "1d",
