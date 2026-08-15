@@ -1,0 +1,50 @@
+// Cloudflare bindings + vars available to every request. Mirrors what used
+// to live in server/src/config/env.js, but Workers has no `process.env` /
+// `dotenv` — everything arrives via the `env` object passed into `fetch()`.
+// Non-secret values are set in wrangler.jsonc's `vars`; secrets are set via
+// `wrangler secret put <NAME>` (production) or `.dev.vars` (local dev, both
+// gitignored) — see docs/MIGRATION.md for the full list and how to set them.
+export interface Env {
+  // --- Bindings ---
+  ASSETS: Fetcher
+  RATE_LIMITER: DurableObjectNamespace
+
+  // --- Non-secret vars (wrangler.jsonc `vars`) ---
+  NODE_ENV: string
+  FIREBASE_PROJECT_ID: string
+  FIRESTORE_DATABASE_ID: string
+  SUPER_ADMIN_LOGIN_ID: string
+  JWT_EXPIRES_IN: string
+  JWT_EXPIRES_IN_REMEMBER_ME: string
+  CLIENT_ORIGIN: string
+
+  // --- Secrets (`wrangler secret put`, never in wrangler.jsonc) ---
+  FIREBASE_CLIENT_EMAIL: string
+  FIREBASE_PRIVATE_KEY: string
+  JWT_SECRET: string
+  SUPER_ADMIN_PASSWORD: string
+}
+
+export function isProduction(env: Env): boolean {
+  return env.NODE_ENV === 'production'
+}
+
+// Same CORS shape as the current Express app: an explicit allow-list plus
+// (in non-production) any localhost/127.0.0.1 origin, since Vite's dev
+// server auto-increments its port. Same-origin requests (the production
+// SPA calling its own /api) send no meaningful cross-origin preflight at
+// all, so this mostly matters during local dev and any transitional period
+// where the old Vercel frontend still points at this Worker.
+export function getAllowedOrigins(env: Env): string[] {
+  return (env.CLIENT_ORIGIN || '')
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean)
+}
+
+export function isOriginAllowed(env: Env, origin: string | null): boolean {
+  if (!origin) return true // server-to-server / same-origin requests send no Origin header
+  if (getAllowedOrigins(env).includes(origin)) return true
+  if (!isProduction(env) && /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) return true
+  return false
+}
