@@ -53,6 +53,7 @@ async function request<T>(env: Env, method: string, url: string, body?: unknown)
   if (response.status === 404) return null as T
   if (!response.ok) {
     const text = await response.text()
+    console.error("FIRESTORE ERROR:", response.status, text)
     throw new FirestoreError(response.status, text)
   }
   const text = await response.text()
