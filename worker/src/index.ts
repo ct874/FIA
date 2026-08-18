@@ -46,10 +46,10 @@ function ensureBootstrapped(env: Env): Promise<void> {
   return bootstrapPromise
 }
 
-app.use('*', async (c, next) => {
-  await ensureBootstrapped(c.env)
-  await next()
-})
+// app.use('*', async (c, next) => {
+//   await ensureBootstrapped(c.env)
+//   await next()
+// })
 
 // --- Security headers (helmet-equivalent) -------------------------------
 app.use('*', async (c, next) => {
