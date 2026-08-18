@@ -17,8 +17,8 @@ import type { Env } from './env'
 import { isOriginAllowed } from './env'
 import apiRoutes from './routes/index'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
-import { ensureDefaultSuperAdmin } from './services/superAdminBootstrap.service'
-import { ensureSeedTours } from './repositories/tours.repository'
+// import { ensureDefaultSuperAdmin } from './services/superAdminBootstrap.service'
+// import { ensureSeedTours } from './repositories/tours.repository'
 
 export { RateLimiter } from './durable-objects/RateLimiter'
 
@@ -32,19 +32,22 @@ const app = new Hono<AppEnv>()
 // promise; every subsequent request on the same warm isolate skips it
 // entirely. A failed attempt clears the cache so the very next request
 // retries rather than being permanently stuck.
-let bootstrapPromise: Promise<void> | null = null
-function ensureBootstrapped(env: Env): Promise<void> {
-  if (!bootstrapPromise) {
-    bootstrapPromise = (async () => {
-      await ensureSeedTours(env)
-      await ensureDefaultSuperAdmin(env)
-    })().catch((error) => {
-      bootstrapPromise = null
-      throw error
-    })
-  }
-  return bootstrapPromise
-}
+
+
+// let bootstrapPromise: Promise<void> | null = null
+// function ensureBootstrapped(env: Env): Promise<void> {
+//   if (!bootstrapPromise) {
+//     bootstrapPromise = (async () => {
+//       await ensureSeedTours(env)
+//       await ensureDefaultSuperAdmin(env)
+//     })().catch((error) => {
+//       bootstrapPromise = null
+//       throw error
+//     })
+//   }
+//   return bootstrapPromise
+// }
+
 
 // app.use('*', async (c, next) => {
 //   await ensureBootstrapped(c.env)
