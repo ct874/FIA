@@ -63,6 +63,15 @@ export async function submitTeacherFeedback(
   input: SubmitTeacherFeedbackInput,
   tourCatalog: TourCatalog,
 ) {
+  if (tourCatalog.tourIds.length === 0) {
+    // Guards against a vacuous "successful" submission: with zero enabled
+    // tours, `tours.length !== tourCatalog.tourIds.length` below would pass
+    // for an empty `tours` array too, letting a Name/Email-only submission
+    // silently create zero feedback records and read back as "completed"
+    // (0 records >= 0 required). Fail loudly instead — there is nothing
+    // valid to submit feedback for yet.
+    throw new ApiError(400, 'No Career Tours are currently available to give feedback for. Please contact the administrator.')
+  }
   if (!input.submittedBy || !String(input.submittedBy).trim()) {
     throw new ApiError(400, 'Your name is required.')
   }

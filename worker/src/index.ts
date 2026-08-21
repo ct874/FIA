@@ -46,7 +46,16 @@ function ensureBootstrapped(env: Env): Promise<void> {
   return bootstrapPromise
 }
 
+// /health deliberately skips this — it must reflect the Worker process
+// itself being up (a liveness check), not whether Firestore happens to be
+// reachable right now (that's a readiness concern). Coupling health to a
+// Firestore-dependent bootstrap also made local debugging harder: a
+// misconfigured/unreachable Firestore made even /health 500, hiding the
+// distinction between "the Worker didn't start" and "a downstream
+// dependency is unavailable" — exactly the confusion hit while diagnosing
+// the login 500 locally.
 app.use('*', async (c, next) => {
+  if (c.req.path === '/health') return next()
   await ensureBootstrapped(c.env)
   await next()
 })

@@ -20,6 +20,7 @@ import { buildDynamicTourCodeMap } from '../utils/exportMappings'
 import { fetchAfeOfficialPreview, downloadAfeOfficialCsv, normalizeBlobError } from '../utils/afeOfficialExport'
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
 import { getMonthlyCyclePresets, formatDateForInput, parseDateFromInput } from '../utils/dateRangeCycles'
+import { SCHOOL_DATA_CHANGED_EVENT } from '../../../utils/constants'
 
 // Bottom "Export Preview" section reserves visual space for a full page of
 // PREVIEW_PAGE_SIZE rows (see TableFillerRows) so the table doesn't visually
@@ -122,6 +123,22 @@ export default function ExportPreviewCard({ directoryVersion }) {
     loadAfePreview(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey, directoryVersion])
+
+  // useSchoolRecords() (feeding the Student/Teacher Feedback tabs above)
+  // already refetches on this event — see hooks/useSchoolRecords.js.
+  // updateSchoolExportCodesRequest (a District Code/Postal Code save) also
+  // dispatches it, but nothing previously re-fetched the AFE tab's own
+  // separate `afeData` copy in response, so a just-saved code kept showing
+  // its old value in this preview (and in the "AFE CSV"/"Download All"
+  // download buttons' in-memory data, though the actual file downloads
+  // were already always fresh since they re-fetch on click) until a manual
+  // "Refresh" click or a full page reload. A background refresh here
+  // (reportBusy=false) never flickers the already-rendered preview.
+  useEffect(() => {
+    const handleDataChanged = () => loadAfePreview(false)
+    window.addEventListener(SCHOOL_DATA_CHANGED_EVENT, handleDataChanged)
+    return () => window.removeEventListener(SCHOOL_DATA_CHANGED_EVENT, handleDataChanged)
+  }, [loadAfePreview])
 
   const TABS = [
     { key: 'studentFeedback', label: t('export.exportPreview.tabs.studentFeedback') },

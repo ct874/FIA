@@ -541,6 +541,7 @@ export const en = {
 
   studentFeedback: {
     title: 'Student Feedback',
+    lockedMessage: 'Please complete Teacher Feedback before submitting Student Feedback.',
     noBatches: 'No feedback batches started yet. Use the form above to start collecting feedback for a grade.',
     couldNotLoad: 'Could not load Student Feedback data.',
     couldNotSubmit: 'Could not submit feedback.',

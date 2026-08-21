@@ -1,0 +1,31 @@
+# Copy this file to `worker/.dev.vars` (gitignored — never commit real
+# secrets) and fill in real values before running `npm run dev` / `wrangler
+# dev`. See docs/MIGRATION.md §4/§7 for how to obtain each value.
+
+# --- Real Firebase project -------------------------------------------------
+# Service account JSON key -> exactly these two fields:
+FIREBASE_CLIENT_EMAIL=
+# Paste the full PEM. Either a real multi-line value, or a single line with
+# literal \n sequences (both are handled — see worker/src/firestore/auth.ts's
+# pemToPkcs8) — e.g.:
+# FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQ...\n-----END PRIVATE KEY-----\n"
+FIREBASE_PRIVATE_KEY=
+
+# --- OR: Firestore Emulator (no real Firebase project needed) --------------
+# Uncomment this instead of the two vars above to run entirely against
+# `firebase emulators:start --only firestore` — no OAuth token is minted and
+# FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY are never read in this mode, so
+# they can stay blank.
+# FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
+
+# --- Always required, either way --------------------------------------------
+JWT_SECRET=dev-only-local-secret-change-me
+SUPER_ADMIN_PASSWORD=dev-only-local-password-change-me
+
+# wrangler.jsonc's top-level `vars.NODE_ENV` is "production" — that value is
+# used even under `wrangler dev` unless overridden here. Keep it as
+# "development" locally so a 500 response's `message` field carries the real
+# error instead of the masked "Internal server error" (see
+# worker/src/middleware/errorHandler.ts) — the unmasked message is what makes
+# a local 500 diagnosable straight from the browser Network tab.
+NODE_ENV=development

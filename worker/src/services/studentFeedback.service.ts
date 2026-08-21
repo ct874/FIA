@@ -6,7 +6,7 @@ import type { Env } from '../env'
 import { findSchoolByUdise, claimNextStudentDummySequence, type SchoolRecord } from '../repositories/schools.repository'
 import { findBatch } from '../repositories/studentFeedbackBatches.repository'
 import { countStudentFeedbackForSchoolGrade, createStudentFeedback } from '../repositories/studentFeedbacks.repository'
-import { computeGradeFeedbackProgress } from './teacherStatus.service'
+import { computeGradeFeedbackProgress, assertTeacherFeedbackCompleted } from './teacherStatus.service'
 import { computeRequiredFeedbackCount } from '../utils/studentFeedbackTarget'
 import { getTargetPercentForDistrict } from './districtFeedbackTarget.service'
 import { formatStudentDummyId } from '../utils/studentDummyId'
@@ -47,6 +47,12 @@ export async function submitStudentFeedback(
   input: SubmitStudentFeedbackInput,
   tourCatalog: TourCatalog,
 ) {
+  // Never trust the frontend's own gating alone — reject the submission
+  // outright, server-side, unless this school's Teacher Feedback has
+  // actually been completed (re-derived from real Firestore data, not a
+  // client-supplied flag).
+  await assertTeacherFeedbackCompleted(env, school.data.udise, tourCatalog.tourIds.length)
+
   const normalizedGrade = String(input.grade ?? '').trim()
   if (!normalizedGrade) {
     throw new ApiError(400, 'Grade is required.')

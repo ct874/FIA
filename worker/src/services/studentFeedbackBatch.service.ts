@@ -9,6 +9,7 @@ import { findBatch, putBatch, type TourRefRecord } from '../repositories/student
 import { GRADES } from '../constants/grades'
 import { getCurrentMonthName, getCurrentFinancialYear } from '../utils/academicPeriod'
 import { ApiError } from '../utils/ApiError'
+import { assertTeacherFeedbackCompleted } from './teacherStatus.service'
 import type { TourCatalog } from '../constants/tours'
 import type { SchoolRecord } from '../repositories/schools.repository'
 import type { DecodedDocument } from '../firestore/codec'
@@ -47,6 +48,12 @@ export async function startStudentFeedbackBatch(
   input: StartBatchInput,
   tourCatalog: TourCatalog,
 ) {
+  // Student Feedback (starting a batch counts as Student Feedback, not just
+  // the final per-student submission) is locked server-side until this
+  // school's Teacher Feedback is actually complete — never trust the
+  // frontend's own gating alone.
+  await assertTeacherFeedbackCompleted(env, school.data.udise, tourCatalog.tourIds.length)
+
   const normalizedGrade = String(input.grade ?? '').trim()
   if (!normalizedGrade || !GRADES.includes(normalizedGrade)) {
     throw new ApiError(400, 'Please select a valid grade.')

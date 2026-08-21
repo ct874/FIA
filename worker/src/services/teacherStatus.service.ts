@@ -11,6 +11,7 @@ import { computeRequiredFeedbackCount, STUDENT_FEEDBACK_TARGET_RATE } from '../u
 import { getTargetPercentForDistrict } from './districtFeedbackTarget.service'
 import { getGradeRank } from '../utils/feedbackSort'
 import { REQUIRED_GRADES, type SchoolCompletionStatus } from './schoolStatus.service'
+import { ApiError } from '../utils/ApiError'
 
 export interface GradeFeedbackProgress {
   grade: string
@@ -82,7 +83,14 @@ export function getSchoolStatusFromProgress(
   gradeProgress: GradeFeedbackProgress[],
   enabledTourCount: number,
 ): SchoolCompletionStatus {
-  const teacherFeedbackCompleted = teacherFeedbackCount >= enabledTourCount
+  // `enabledTourCount > 0` guards against the classic empty-array vacuous-
+  // truth bug: `0 >= 0` is `true` in JS, so a school with ZERO submitted
+  // teacher feedback records must never read as "completed" just because
+  // the live tour catalog also happened to resolve to zero enabled tours
+  // (e.g. a brand-new school queried before the Firestore `tours`
+  // collection is seeded/available). No enabled tours means teacher
+  // feedback cannot possibly be complete yet, full stop.
+  const teacherFeedbackCompleted = enabledTourCount > 0 && teacherFeedbackCount >= enabledTourCount
 
   // Student Feedback is only "completed" once EVERY required grade (6-12)
   // has a batch AND has met its target — not just whatever grades happen
@@ -103,6 +111,20 @@ export async function getSchoolStatus(env: Env, udise: string, enabledTourCount:
   ])
 
   return getSchoolStatusFromProgress(teacherFeedbackCount, gradeProgress, enabledTourCount)
+}
+
+// Backend gate for every Student Feedback write (starting a batch,
+// submitting a student's feedback) — re-derived from real Firestore data on
+// every call, never trusted from the frontend. This is the server-side half
+// of Step 4/5 of the required workflow: Student Feedback must be rejected
+// with a clear error until Teacher Feedback has actually been completed for
+// this school, no matter what the UI already gated on or bypassed.
+export async function assertTeacherFeedbackCompleted(env: Env, udise: string, enabledTourCount: number): Promise<void> {
+  const teacherFeedbackCount = await countTeacherFeedbackForSchool(env, udise)
+  const teacherFeedbackCompleted = enabledTourCount > 0 && teacherFeedbackCount >= enabledTourCount
+  if (!teacherFeedbackCompleted) {
+    throw new ApiError(403, 'Please complete Teacher Feedback before submitting Student Feedback.')
+  }
 }
 
 export async function getDashboardOverview(env: Env, udise: string) {

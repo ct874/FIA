@@ -35,7 +35,17 @@ function documentsRoot(env: Env): string {
 }
 
 async function authHeader(env: Env): Promise<Record<string, string>> {
-  if (emulatorHost(env)) return {} // emulator accepts unauthenticated requests
+  // The emulator has no real IAM, so — unlike production Firestore, where an
+  // IAM-authenticated service-account request bypasses Security Rules
+  // entirely — it enforces firestore.rules against EVERY request, including
+  // this Worker's own backend calls, unless that request carries the
+  // emulator's documented admin-bypass credential: the literal bearer token
+  // "owner" (the same convention the Firebase Admin SDK uses automatically
+  // once FIRESTORE_EMULATOR_HOST is set). Sending no Authorization header at
+  // all — as this used to — gets evaluated as an unauthenticated request,
+  // which this repo's deny-all firestore.rules rejects with 403
+  // PERMISSION_DENIED for literally every read/write, local dev included.
+  if (emulatorHost(env)) return { Authorization: 'Bearer owner' }
   const token = await getFirestoreAccessToken(env)
   return { Authorization: `Bearer ${token}` }
 }
@@ -225,14 +235,37 @@ export interface QueryOptions {
   startAfterValues?: unknown[] // cursor pagination
 }
 
-function buildStructuredQuery(options: QueryOptions) {
-  const filters = (options.where ?? []).map((filter) => ({
+// Firestore's structured-query wire format has TWO distinct filter shapes:
+// `fieldFilter` (relational operators — EQUAL/LESS_THAN/etc. — against a
+// real value) and `unaryFilter` (IS_NULL/IS_NOT_NULL/IS_NAN/IS_NOT_NAN,
+// against no value at all). A `fieldFilter` with `op: EQUAL` and a null
+// value is NOT the same as `unaryFilter: IS_NULL` — Firestore does not
+// treat them as equivalent, and a null-valued `fieldFilter` silently
+// matches ZERO documents (verified against both the emulator and the
+// documented REST API behavior), even when the target field is genuinely
+// null on every document. This is exactly what made `listActiveTours`'s
+// `deletedAt == null` filter (see repositories/tours.repository.ts) return
+// an empty active-tour list despite AWS/Robotics/Music all having
+// `deletedAt: null` — which in turn was the root cause of a school with
+// zero teacher feedback reading as "Teacher Feedback Completed" (0
+// submitted >= 0 required tours). Building the correct filter shape here
+// fixes it for every caller, not just tours.
+function buildFilter(filter: StructuredQueryFilter) {
+  if (filter.value === null) {
+    if (filter.op === 'EQUAL') return { unaryFilter: { field: { fieldPath: filter.field }, op: 'IS_NULL' } }
+    if (filter.op === 'NOT_EQUAL') return { unaryFilter: { field: { fieldPath: filter.field }, op: 'IS_NOT_NULL' } }
+  }
+  return {
     fieldFilter: {
       field: { fieldPath: filter.field },
       op: filter.op,
       value: encodeFilterValue(filter.value),
     },
-  }))
+  }
+}
+
+function buildStructuredQuery(options: QueryOptions) {
+  const filters = (options.where ?? []).map((filter) => buildFilter(filter))
 
   return {
     ...(options.select ? { select: { fields: options.select.map((field) => ({ fieldPath: field })) } } : {}),

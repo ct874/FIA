@@ -3,6 +3,7 @@ import ProtectedRoute from './ProtectedRoute'
 import GuestRoute from './GuestRoute'
 import TeacherProtectedRoute from './TeacherProtectedRoute'
 import TeacherGuestRoute from './TeacherGuestRoute'
+import StudentFeedbackGuard from './StudentFeedbackGuard'
 import AdminLayout from '../components/layout/AdminLayout'
 import TeacherLayout from '../components/layout/TeacherLayout'
 import LoginPage from '../features/auth/pages/LoginPage'
@@ -40,7 +41,9 @@ export default function AppRoutes() {
         <Route element={<TeacherLayout />}>
           <Route path={TEACHER_ROUTES.DASHBOARD} element={<TeacherDashboardPage />} />
           <Route path={TEACHER_ROUTES.FEEDBACK} element={<TeacherFeedbackPage />} />
-          <Route path={TEACHER_ROUTES.STUDENT_FEEDBACK} element={<StudentFeedbackPage />} />
+          <Route element={<StudentFeedbackGuard />}>
+            <Route path={TEACHER_ROUTES.STUDENT_FEEDBACK} element={<StudentFeedbackPage />} />
+          </Route>
         </Route>
       </Route>
 
