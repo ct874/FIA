@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "fia-worker",
+  "name": "fia",
   "main": "src/index.ts",
   "compatibility_date": "2024-09-23",
   // Needed for bcryptjs's CSPRNG resolution and for SheetJS's bundler
@@ -11,9 +11,11 @@
   // Bcrypt (cost 12) and the AFE CSV export are real CPU work — the free
   // plan's 10ms/request budget cannot run either. Workers Paid is required;
   // this raises the ceiling available to a request (see docs/MIGRATION.md).
-  "limits": {
-    "cpu_ms": 30000
-  },
+
+  // "limits": {
+  //   "cpu_ms": 30000
+  // },
+
 
   // Serves the Vite build (../dist) directly at the edge — requests that
   // match a real file are served before the Worker ever runs (no cost, no
@@ -55,12 +57,12 @@
   // are NOT readable from this file or from the repository.
   "vars": {
     "NODE_ENV": "production",
-    "FIREBASE_PROJECT_ID": "REPLACE_WITH_FIREBASE_PROJECT_ID",
+    "FIREBASE_PROJECT_ID": "fia-career-tours-temp",
     "FIRESTORE_DATABASE_ID": "(default)",
     "SUPER_ADMIN_LOGIN_ID": "fia@admin.com",
     "JWT_EXPIRES_IN": "1d",
     "JWT_EXPIRES_IN_REMEMBER_ME": "30d",
-    "CLIENT_ORIGIN": ""
+    "CLIENT_ORIGIN": "https://fia.ct-cb1.workers.dev"
   },
 
   "observability": {
@@ -76,7 +78,7 @@
       "name": "fia-worker-staging",
       "vars": {
         "NODE_ENV": "staging",
-        "FIREBASE_PROJECT_ID": "REPLACE_WITH_STAGING_FIREBASE_PROJECT_ID",
+        "FIREBASE_PROJECT_ID": "fia-career-tours",
         "FIRESTORE_DATABASE_ID": "(default)",
         "SUPER_ADMIN_LOGIN_ID": "fia@admin.com",
         "JWT_EXPIRES_IN": "1d",
