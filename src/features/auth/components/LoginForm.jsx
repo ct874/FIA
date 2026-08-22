@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TextInput from '../../../components/ui/TextInput'
 import PasswordInput from '../../../components/ui/PasswordInput'
@@ -8,7 +8,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import { useLanguage } from '../../../hooks/useLanguage'
 import { validateLoginForm } from '../utils/validateLoginForm'
 import { getApiErrorMessage } from '../../../utils/apiErrorMessage'
-import { ROUTES } from '../../../utils/constants'
+import { ROUTES, SESSION_EXPIRED_FLAG } from '../../../utils/constants'
 
 const INITIAL_FORM = { loginId: '', password: '' }
 
@@ -20,8 +20,32 @@ export default function LoginForm() {
   const [form, setForm] = useState(INITIAL_FORM)
   const [rememberMe, setRememberMe] = useState(false)
   const [fieldErrors, setFieldErrors] = useState({})
-  const [formError, setFormError] = useState('')
+  // One-shot: AuthProvider sets SESSION_EXPIRED_FLAG right before clearing
+  // a session that expired "underneath" an actively browsing user
+  // (cross-tab logout or 30-hour inactivity) — read (only) here so the
+  // very first render already shows a clear reason instead of a silently
+  // blank login page that then flashes a message in a moment. Left in
+  // sessionStorage until the effect below removes it, so this read is a
+  // pure function of storage and safe to run twice (React Strict Mode).
+  const [formError, setFormError] = useState(() => {
+    try {
+      return sessionStorage.getItem(SESSION_EXPIRED_FLAG) ? t('common.sessionExpired') : ''
+    } catch {
+      return ''
+    }
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // The actual one-shot consumption (removing the flag) — separated from
+  // the read above so it never reappears on a later visit that has
+  // nothing to do with an expired session, without calling setState here.
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(SESSION_EXPIRED_FLAG)
+    } catch {
+      // sessionStorage unavailable — nothing to clean up.
+    }
+  }, [])
 
   const handleChange = (field) => (event) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }))

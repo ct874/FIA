@@ -8,6 +8,17 @@ import { notFound, errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
 
+// Trust exactly `env.trustProxyHops` reverse-proxy hop(s) in front of this
+// process (Render's edge proxy is one hop) so `req.ip` resolves to the real
+// client address instead of the proxy's own peer address. Without this,
+// every request collapses to the same `req.ip` value, which turns
+// express-rate-limit's per-IP counters (see middleware/rateLimiters.js)
+// into a single counter shared by the entire application — the root cause
+// of legitimate concurrent users seeing 429s. Configurable via
+// TRUST_PROXY_HOPS instead of hardcoded so this stays correct if the
+// hosting provider (and its hop count) ever changes.
+app.set('trust proxy', env.trustProxyHops)
+
 app.use(helmet())
 app.use(
   cors({

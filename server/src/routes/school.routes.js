@@ -13,7 +13,7 @@ import {
   exportAfeOfficialCsv,
 } from '../controllers/school.controller.js'
 import { authenticate } from '../middleware/authenticate.js'
-import { loginRateLimiter } from '../middleware/rateLimiters.js'
+import { createActionRateLimiter } from '../middleware/rateLimiters.js'
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -31,11 +31,11 @@ router.get('/submissions', getSchoolsSubmissions)
 router.get('/export/afe-official', exportAfeOfficialCsv)
 router.post('/upload', upload.single('file'), uploadSchoolList)
 // Every route below re-checks the Super Admin password on top of the
-// session token, so they all share the login rate limiter's brute-force
-// protection.
-router.patch('/:udise/export-codes', loginRateLimiter, updateSchoolExportCodes)
-router.delete('/data', loginRateLimiter, deleteProgramData)
-router.post('/reset', loginRateLimiter, resetDatabase)
-router.delete('/', loginRateLimiter, deleteAllSchools)
+// session token, so they all get the same action rate-limit protection —
+// each its own limiter instance (see rateLimiters.js).
+router.patch('/:udise/export-codes', createActionRateLimiter(), updateSchoolExportCodes)
+router.delete('/data', createActionRateLimiter(), deleteProgramData)
+router.post('/reset', createActionRateLimiter(), resetDatabase)
+router.delete('/', createActionRateLimiter(), deleteAllSchools)
 
 export default router

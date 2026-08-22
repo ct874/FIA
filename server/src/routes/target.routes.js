@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { getProgress, getDistricts, verifyAccess, saveTarget } from '../controllers/target.controller.js'
 import { authenticate } from '../middleware/authenticate.js'
-import { loginRateLimiter } from '../middleware/rateLimiters.js'
+import { createActionRateLimiter } from '../middleware/rateLimiters.js'
 
 const router = Router()
 
@@ -11,9 +11,9 @@ router.use(authenticate)
 
 router.get('/progress', getProgress)
 router.get('/districts', getDistricts)
-// Reuses the login rate limiter — this endpoint re-checks a passcode too,
-// so it deserves the same brute-force protection as /schools/reset.
-router.post('/verify-access', loginRateLimiter, verifyAccess)
+// This endpoint re-checks a passcode too, so it deserves the same action
+// rate-limit protection as /schools/reset (own limiter instance).
+router.post('/verify-access', createActionRateLimiter(), verifyAccess)
 router.post('/', saveTarget)
 
 export default router

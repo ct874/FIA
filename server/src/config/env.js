@@ -46,4 +46,9 @@ export const env = {
     password: process.env.SUPER_ADMIN_PASSWORD || 'fia@123',
   },
   isProduction: process.env.NODE_ENV === 'production',
+  // Number of reverse-proxy hops in front of this process that should be
+  // trusted for `X-Forwarded-For` (Express's `trust proxy` setting) — see
+  // app.js for why this matters for rate limiting. Render's edge is one
+  // hop; adjust via env if the hosting provider changes.
+  trustProxyHops: Number(process.env.TRUST_PROXY_HOPS) || 1,
 }

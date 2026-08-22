@@ -25,6 +25,17 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://fia-bn
 export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized'
 export const TEACHER_AUTH_UNAUTHORIZED_EVENT = 'teacherAuth:unauthorized'
 
+// One-shot sessionStorage flags: set by AuthProvider/TeacherAuthProvider
+// right before clearing a session that expired "underneath" an actively
+// browsing user (cross-tab logout or 30-hour inactivity) — LoginForm/
+// TeacherLoginForm read + clear these on mount to show a clear "your
+// session expired" message instead of silently landing back on a blank
+// login page. sessionStorage (not localStorage) is deliberate: this is a
+// one-time UI note for whichever tab lands on the login page next, not
+// session state itself.
+export const SESSION_EXPIRED_FLAG = 'fia_admin_session_expired'
+export const TEACHER_SESSION_EXPIRED_FLAG = 'fia_teacher_session_expired'
+
 // Dispatched whenever an admin action changes school/feedback data
 // (upload, delete) — every useSchoolRecords() instance across the app
 // listens for this and refetches immediately, so all dashboard cards/tables

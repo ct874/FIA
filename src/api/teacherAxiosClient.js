@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { API_BASE_URL, TEACHER_AUTH_UNAUTHORIZED_EVENT } from '../utils/constants'
-import { getStoredTeacherToken, clearStoredTeacherToken } from '../utils/teacherTokenStorage'
+import { getStoredTeacherToken, clearStoredTeacherToken, touchTeacherActivity } from '../utils/teacherTokenStorage'
 
 // Separate instance (and separate token storage) from api/axiosClient.js —
 // the Admin and Teacher Portal are two independent auth domains that must
@@ -21,7 +21,12 @@ teacherAxiosClient.interceptors.request.use((config) => {
 })
 
 teacherAxiosClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // A successful authenticated call counts as activity for the 30-hour
+    // inactivity timer — already throttled internally.
+    touchTeacherActivity()
+    return response
+  },
   (error) => {
     if (error?.response?.status === 401) {
       clearStoredTeacherToken()
