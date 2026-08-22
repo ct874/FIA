@@ -17,12 +17,30 @@ import type { Env } from './env'
 import { isOriginAllowed } from './env'
 import apiRoutes from './routes/index'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
-// import { ensureDefaultSuperAdmin } from './services/superAdminBootstrap.service'
-// import { ensureSeedTours } from './repositories/tours.repository'
+import { ensureDefaultSuperAdmin } from './services/superAdminBootstrap.service'
+import { ensureSeedTours } from './repositories/tours.repository'
 
 export { RateLimiter } from './durable-objects/RateLimiter'
 
 const app = new Hono<AppEnv>()
+
+// Cached at module scope so this only runs once per warm isolate (see
+// comment below) instead of on every single request. A failed attempt
+// clears the cache so the very next request retries cleanly.
+let bootstrapPromise: Promise<void> | null = null
+
+async function ensureBootstrapped(env: Env): Promise<void> {
+  if (!bootstrapPromise) {
+    bootstrapPromise = (async () => {
+      await ensureDefaultSuperAdmin(env)
+      await ensureSeedTours(env)
+    })().catch((error) => {
+      bootstrapPromise = null
+      throw error
+    })
+  }
+  await bootstrapPromise
+}
 
 // --- One-time-per-isolate bootstrap -------------------------------------
 // Express ran connectDB() -> ensureDefaultSuperAdmin() -> ensureSeedTours()
