@@ -76,10 +76,10 @@ From the project root:
 ```bash
 cp .env.example .env   # VITE_API_BASE_URL defaults to https://fia.ct-cb1.workers.dev/api
 npm install
-npm run dev             # http://https://fia-nu.vercel.app/
+npm run dev             # http://https://fia.ct-cb1.workers.dev/
 ```
 
-Open `https://fia-nu.vercel.app/` — this is the Super Admin login page. After a
+Open `https://fia.ct-cb1.workers.dev/` — this is the Super Admin login page. After a
 successful login you are redirected to `/home`, which is protected and
 requires a valid session.
 

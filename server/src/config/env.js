@@ -24,9 +24,9 @@ const LOCAL_DEV_ORIGINS = [
 
 // A browser's Origin header is always scheme+host+port, never a trailing
 // slash — normalize away any trailing slash so a value like
-// "https://fia-nu.vercel.app/" (easy to paste by mistake into an env var)
-// still matches the real "https://fia-nu.vercel.app" the browser sends.
-const configuredOrigins = (process.env.CLIENT_ORIGIN || 'https://fia-nu.vercel.app')
+// "https://fia.ct-cb1.workers.dev/" (easy to paste by mistake into an env var)
+// still matches the real "https://fia.ct-cb1.workers.dev" the browser sends.
+const configuredOrigins = (process.env.CLIENT_ORIGIN || 'https://fia.ct-cb1.workers.dev')
   .split(',')
   .map((origin) => origin.trim().replace(/\/+$/, ''))
   .filter(Boolean)

@@ -7,7 +7,7 @@ async function main() {
   const browser = await chromium.launch()
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
 
-  await page.goto('https://fia-nu.vercel.app/')
+  await page.goto('https://fia.ct-cb1.workers.dev/')
   await page.waitForTimeout(1000)
   await page.locator('input').nth(0).fill('fia@admin.com')
   await page.locator('input').nth(1).fill('fia@123')
@@ -32,7 +32,7 @@ async function main() {
   await page.waitForTimeout(22000)
   await page.screenshot({ path: `${SCRATCH}/live-2-after-poll.png` })
 
-  await page.goto('https://fia-nu.vercel.app/submissions')
+  await page.goto('https://fia.ct-cb1.workers.dev/submissions')
   await page.waitForTimeout(1500)
   await page.screenshot({ path: `${SCRATCH}/live-3-submissions-grades.png`, fullPage: true })
 
