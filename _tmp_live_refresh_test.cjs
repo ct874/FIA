@@ -21,11 +21,11 @@ async function main() {
   // reported bug scenario.
   console.log('Uploading a school via a separate session (curl)...')
   const TOKEN = execSync(
-    `curl -s -X POST https://fia-bnum.onrender.com/api/auth/login -H "Content-Type: application/json" -d "{\\"loginId\\":\\"fia@admin.com\\",\\"password\\":\\"fia@123\\",\\"rememberMe\\":true}"`,
+    `curl -s -X POST https://localhost:5000/api/auth/login -H "Content-Type: application/json" -d "{\\"loginId\\":\\"fia@admin.com\\",\\"password\\":\\"fia@123\\",\\"rememberMe\\":true}"`,
   ).toString()
   const token = JSON.parse(TOKEN).data.token
   execSync(
-    `curl -s -X POST https://fia-bnum.onrender.com/api/schools/upload -H "Authorization: Bearer ${token}" -F "file=@_tmp_live_test.xlsx"`,
+    `curl -s -X POST https://localhost:5000/api/schools/upload -H "Authorization: Bearer ${token}" -F "file=@_tmp_live_test.xlsx"`,
   )
 
   console.log('Waiting 22s for background poll to pick up the change (no manual reload)...')
