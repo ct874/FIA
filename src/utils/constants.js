@@ -20,7 +20,7 @@ export const TEACHER_ROUTES = {
 // Local dev overrides this via .env.local to point at `wrangler dev`
 // (see .env.local.example) or the old Express server during the
 // transition/rollback window.
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000/api'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://fia.ct-cb1.workers.dev/api'
 
 export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized'
 export const TEACHER_AUTH_UNAUTHORIZED_EVENT = 'teacherAuth:unauthorized'

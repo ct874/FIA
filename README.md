@@ -55,7 +55,7 @@ model/service/controller/route files under `server/src/` mounted in
 cd server
 cp .env.example .env   # then edit values, especially JWT_SECRET
 npm install
-npm run dev             # http://https://localhost:5000
+npm run dev             # http://https://fia.ct-cb1.workers.dev
 ```
 
 Make sure MongoDB is running and `MONGO_URI` in `server/.env` points to it.
@@ -74,7 +74,7 @@ same bootstrap manually at any time with `npm run seed:super-admin`.
 From the project root:
 
 ```bash
-cp .env.example .env   # VITE_API_BASE_URL defaults to https://localhost:5000/api
+cp .env.example .env   # VITE_API_BASE_URL defaults to https://fia.ct-cb1.workers.dev/api
 npm install
 npm run dev             # http://https://fia-nu.vercel.app/
 ```
