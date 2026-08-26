@@ -17,8 +17,13 @@ export function errorHandler(err: Error, c: Context<AppEnv>): Response {
   }
 
   // Any other error becomes a 500; message is masked in production
-  // (matches the original's env.isProduction check) and logged.
-  console.error(err)
+  // (matches the original's env.isProduction check) and logged with
+  // request context (method + route) so a local 500 is diagnosable
+  // straight from the Wrangler terminal, without ever logging secret
+  // values (JWT_SECRET, private keys, passwords, tokens never appear here —
+  // only the error's own message/stack, which none of this app's error
+  // paths embed a secret into).
+  console.error(`[${c.req.method}] ${c.req.path} ->`, err.stack ?? err.message)
   const message = c.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
   return c.json({ success: false, message }, 500)
 }

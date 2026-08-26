@@ -14,7 +14,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from './types'
 import type { Env } from './env'
-import { isOriginAllowed } from './env'
+import { isOriginAllowed, validateEnv, logConfigStatus } from './env'
 import apiRoutes from './routes/index'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
 import { ensureDefaultSuperAdmin } from './services/superAdminBootstrap.service'
@@ -32,6 +32,15 @@ let bootstrapPromise: Promise<void> | null = null
 async function ensureBootstrapped(env: Env): Promise<void> {
   if (!bootstrapPromise) {
     bootstrapPromise = (async () => {
+      // Config presence (booleans only, dev-only) logged BEFORE validation
+      // so a missing-var failure still shows what IS configured, not just
+      // what's missing.
+      logConfigStatus(env)
+      // Fail fast with a named list of missing vars rather than letting
+      // login (or any other route) crash downstream with an opaque error —
+      // this is what makes a misconfigured .dev.vars diagnosable from the
+      // very first request instead of from a bcrypt/JWT stack trace.
+      validateEnv(env)
       await ensureDefaultSuperAdmin(env)
       await ensureSeedTours(env)
     })().catch((error) => {

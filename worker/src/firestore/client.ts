@@ -10,6 +10,7 @@
 // OAuth token needed — this is what lets `npm run dev` run entirely against
 // a local Firestore emulator instead of production data.
 import type { Env } from '../env'
+import { getFirestoreEmulatorHost } from '../env'
 import { getFirestoreAccessToken } from './auth'
 import {
   decodeDocument,
@@ -23,7 +24,7 @@ import {
 } from './codec'
 
 function emulatorHost(env: Env): string | undefined {
-  return (env as unknown as Record<string, string | undefined>).FIRESTORE_EMULATOR_HOST
+  return getFirestoreEmulatorHost(env)
 }
 
 function documentsRoot(env: Env): string {
@@ -51,14 +52,35 @@ async function authHeader(env: Env): Promise<Record<string, string>> {
 }
 
 async function request<T>(env: Env, method: string, url: string, body?: unknown): Promise<T> {
-  const response = await fetch(url, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(await authHeader(env)),
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(await authHeader(env)),
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+  } catch (cause) {
+    // `fetch()` itself throwing (as opposed to resolving with a non-2xx
+    // Response) means the request never reached Firestore at all — most
+    // commonly the Firestore Emulator not running locally. Left as the raw
+    // error, this surfaces to the browser as workerd's opaque
+    // "internal error; reference = <id>" (no indication of *what* failed),
+    // which is exactly what made this undiagnosable from the Network tab
+    // alone. Reframing it here with the actual target + a concrete next
+    // step turns it back into something a developer can act on immediately
+    // (this message reaches the browser unmasked in dev — see
+    // middleware/errorHandler.ts — and is masked in production as usual).
+    const emulator = emulatorHost(env)
+    const reason = cause instanceof Error ? cause.message : String(cause)
+    const message = emulator
+      ? `Could not reach the Firestore Emulator at http://${emulator} (${reason}). Is it running? Start it with: firebase emulators:start --only firestore`
+      : `Could not reach Firestore at ${url} (${reason}). Check network connectivity and FIREBASE_PROJECT_ID/FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY.`
+    console.error('FIRESTORE CONNECTION ERROR:', message)
+    throw new FirestoreConnectionError(message)
+  }
 
   if (response.status === 404) return null as T
   if (!response.ok) {
@@ -77,6 +99,10 @@ export class FirestoreError extends Error {
     this.status = status
   }
 }
+
+// Distinct from FirestoreError (which means "Firestore answered with an
+// error status") — this means Firestore was never reached at all.
+export class FirestoreConnectionError extends Error {}
 
 // -- Document CRUD -----------------------------------------------------
 
