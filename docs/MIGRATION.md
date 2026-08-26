@@ -1,18 +1,20 @@
 # FIA Platform: Cloudflare Workers + Firestore Migration
 
-Status: **code complete, not deployed**. The Worker type-checks and bundles
-successfully (`wrangler deploy --dry-run`), and the frontend still builds
-(`vite build`). Nothing has been deployed to Cloudflare and no production
-data has been touched. `server/` (the existing Express/Mongoose backend) is
-completely untouched and remains usable as-is.
+Status: **migration complete and deployed**. The Worker is live at
+`fia.ct-cb1.workers.dev` against the real `fia-career-tours` Firestore
+project, and `server/` (the original Express/Mongoose backend this
+document describes migrating away from) has been deleted from the repo —
+the Cloudflare Worker below is the only backend. The rest of this document
+is kept as a historical record of how that migration was done; treat any
+"not yet deployed" / "server/ still exists" language below as describing
+that point in time, not the current state.
 
 ## 1. Final folder structure
 
 ```
 /
 ├── src/                        # React frontend (unchanged except constants.js)
-├── server/                     # EXISTING Node/Express/Mongo backend — untouched, kept as fallback
-├── worker/                     # NEW Cloudflare Worker backend
+├── worker/                     # THE Cloudflare Worker backend (server/ has been deleted)
 │   ├── src/
 │   │   ├── index.ts             # Worker entry: /api/* + /health -> Hono, else -> ASSETS (SPA)
 │   │   ├── env.ts               # Env/bindings typing, CORS allow-list logic

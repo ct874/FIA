@@ -5,9 +5,22 @@ import {
   saveTargetRequest,
 } from '../api/targets.api'
 
-export async function fetchTargetProgress() {
-  const { data } = await fetchTargetProgressRequest()
-  return data.data
+// In-flight de-duplication — same rationale as fetchSchoolRecords() in
+// schoolData.service.js: useTargetProgress() is used from more than one
+// place (Target Management page, the Export page's district section);
+// sharing one in-flight promise collapses simultaneous callers into a
+// single real HTTP request instead of one per caller.
+let inFlightTargetProgress = null
+
+export function fetchTargetProgress() {
+  if (!inFlightTargetProgress) {
+    inFlightTargetProgress = fetchTargetProgressRequest()
+      .then(({ data }) => data.data)
+      .finally(() => {
+        inFlightTargetProgress = null
+      })
+  }
+  return inFlightTargetProgress
 }
 
 export async function fetchTargetDistrictOptions() {
